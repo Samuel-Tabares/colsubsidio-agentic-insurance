@@ -1,0 +1,4 @@
+Filas procesadas: 1566028
+SERIE duplicadas: 0
+Advertencias: 0
+

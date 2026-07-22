@@ -1,0 +1,6 @@
+# Raw and cleaned affiliate data — 197MB/223MB, exceeds GitHub's 100MB limit,
+# and contains PII (full names). Keep it local; load to Supabase to share with the team.
+Usos_Productos_Afiliados_SIN_ID.csv
+output/afiliados_clean.csv
+
+.DS_Store
