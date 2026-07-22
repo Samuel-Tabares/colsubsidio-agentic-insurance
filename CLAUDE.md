@@ -4,14 +4,14 @@
 
 Hackathon challenge (sponsor: Colsubsidio). Build an end-to-end, self-service flow that takes a prospect from "no sé qué seguro necesito" to "ya quedé asegurado" with **no human advisor involved**. Colsubsidio is a **sponsor/distributor, not the insurer** — it surfaces third-party insurers' products; the flow matches people to existing policies, it doesn't design them.
 
-Judged criteria (full brief in `contexto.md`):
+Judged criteria (full brief in `RETO_2_SEGUROS.md`):
 - Propensity to need a given insurance type must be explainable from real affiliate variables (age, beneficiaries, life events, employment, habits) — never random or "just because."
 - The offer (insurance type + coverages, not just price) must visibly differ by profile — e.g. single/no-kids vs. married-with-3-kids.
 - The experience must feel personal and trustworthy, not a generic form; plain language, no policy jargon.
 - The flow must be fully self-guided end to end (a judge can walk it without the team narrating).
 - Out of scope: real insurer integration, legally-binding e-signature, claims/renewals, real payment gateway.
 
-This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` (transcribed from the official hackathon slides — more authoritative than `contexto.md`, which is an earlier informal paste of the same brief; keep both but defer to `RETO_2_SEGUROS.md` if they ever disagree). Event runs 2026-07-22 to 2026-07-26 in Bogotá (virtual sessions Wed/Thu, in-person at Club La Colina, Colsubsidio, Fri–Sun). The team explicitly has **not** locked the architecture yet — pending the official full challenge explanation — so treat everything in this file as current-best-guess, not final.
+This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` — transcribed from the official hackathon slides, merged with the team's informal brief (formerly `contexto.md`, now folded in so nothing was lost) into one document. Event runs 2026-07-22 to 2026-07-26 in Bogotá (virtual sessions Wed/Thu, in-person at Club La Colina, Colsubsidio, Fri–Sun). The team explicitly has **not** locked the architecture yet — pending the official full challenge explanation — so treat everything in this file as current-best-guess, not final.
 
 ## Equipo
 
@@ -52,7 +52,7 @@ Update this table as the team locks in decisions — don't let it drift out of s
   ```
   Takes ~10s for the full file. Re-run after any change to the raw CSV or to the field mappings in the script. It also writes `output/etl_report.txt` (row count, duplicate `SERIE` count, per-row warnings for values outside the known enums).
 - `sql/schema.sql` is the Postgres DDL for the cleaned model (enum types + `afiliados_productos` table). **Not yet applied to any database** — Supabase project for this repo isn't provisioned yet; loading 1.56M rows will need a direct `psql`/`COPY` connection rather than piecemeal `INSERT`s (the Supabase MCP tools available in this environment don't expose one).
-- `output/dashboard_stats.json` holds pre-aggregated counts (used to build the exploratory dashboard artifact linked in `contexto.md`) — regenerate it from `output/afiliados_clean.csv` if the ETL output changes.
+- `output/dashboard_stats.json` holds pre-aggregated counts (used to build the exploratory dashboard artifact linked in `README.md`) — regenerate it from `output/afiliados_clean.csv` if the ETL output changes.
 
 ## Data model notes
 
@@ -82,7 +82,7 @@ Preguntas abiertas que bloquean o afinan el stack — actualizar esta lista (tac
 - **Hugging Face**: ¿modelo de embeddings para el RAG en Pinecone, modelo LLM alterno, o algo más específico? Rol sin confirmar.
 - **ElevenLabs**: ¿voz es parte del MVP que se le muestra al jurado, o es un "nice to have" fuera de alcance por ahora?
 - **Alcance del sistema RAG (Pinecone)**: ¿solo responde preguntas sobre coberturas del catálogo real, o también alimenta la lógica de matching/propensión?
-- **Catálogo real de seguros**: aún no está estructurado — falta extraer y modelar la oferta desde colsubsidio.com/seguros (mencionado en `contexto.md`), hoy solo tenemos los datos de uso de productos existentes, no el catálogo de seguros en sí.
+- **Catálogo real de seguros**: aún no está estructurado — falta extraer y modelar la oferta desde https://www.colsubsidio.com/seguros (link en `README.md`), hoy solo tenemos los datos de uso de productos existentes, no el catálogo de seguros en sí.
 - **Carga a Supabase**: pausada a propósito (ver `sql/schema.sql`) — falta decidir cuándo y cómo (conexión directa `psql`/`COPY` recomendada para 1.56M filas, ver notas del pipeline arriba).
 - **Arquitectura general**: el equipo decidió explícitamente no cerrarla del todo hasta la explicación oficial completa del reto (ej. si el agente debe manejar transacciones de dinero directamente) — no tratar nada de este archivo como definitivo hasta esa sesión.
 
