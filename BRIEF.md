@@ -383,6 +383,12 @@ despliegan. El usuario nunca sale del chat.
    Por qué importa tanto: si la búsqueda semántica ordena por relevancia y eso define la
    recomendación, la respuesta honesta al jurado es "porque el vector quedó cerca". El brief dice
    literal que no acepta soluciones tipo caja negra.
+
+   > **Esto supera el flujo descrito en `EMULADOR_ARQUITECTURA.md`**, que pone al RAG a devolver
+   > resultados ordenados por relevancia y de ahí sale el análisis de propensión. El resto de ese
+   > documento (esquema SQL, tablas de conversaciones y auditoría, separación de los cuatro objetos
+   > de datos) sigue vigente y es correcto. El enfoque vigente para propensión y reglas está en
+   > `ANALISIS-PROPENSION.md`.
 2. **Nada que el agente diga puede estar fuera del catálogo.** Si no está documentado, dice que
    no lo tiene. No estima, no aproxima, no completa el patrón.
 3. **El por qué se muestra dentro del producto, no en el pitch.**
@@ -436,6 +442,65 @@ Un solo criterio manda sobre todos los demás:
 > **Alguien ajeno al equipo abre la URL, la recorre sin ayuda y termina asegurado.**
 
 Si eso falla, nada más importa. Si eso pasa, ya estamos compitiendo.
+
+## Para quién
+
+Una persona que no sabe qué seguro necesita y que no quiere hablar con un asesor.
+No es alguien que ya sabe qué quiere y viene a cotizar.
+
+## El momento que tiene que pasar en el demo
+
+Alguien entra sin saber nada de seguros, conversa unos turnos, y sale con:
+1. Un producto concreto recomendado, con su prima y sus coberturas reales.
+2. Una razón que entiende y que puede repetir con sus propias palabras.
+3. Las exclusiones a la vista, sin haberlas pedido.
+4. Un resumen de que quedó asegurado, y el aviso de que un asesor retoma para finalizar.
+
+Y todo eso sin que nadie del equipo abra la boca.
+
+## Preguntas ya resueltas, para no reabrirlas
+
+1. **¿Para qué la base de afiliados?** Para sostener el porqué. El brief pide "qué **tipo** de
+   persona", que es nivel de segmento. No es un directorio ni un lookup individual, y de hecho la
+   base no trae teléfono ni correo.
+2. **¿Inbound u outbound?** Arquitectura bidireccional, demo inbound. El outbound es bonus declarado
+   del brief y se cubre con una pantalla de priorización, sin construir envíos.
+3. **¿Cómo entra el jurado?** En frío. El brief pide el recorrido completo desde "no sé qué seguro
+   necesito".
+4. **¿Dónde vive en producción?** WhatsApp como canal, la web de Colsubsidio como entrada fría.
+
+## Quién decide qué
+
+- **Flujo y experiencia:** Sarah. Es dueña del gate más duro, su palabra manda.
+- **Reglas de seguros y qué se recomienda:** Jhon. Es el único con el dominio.
+- **El agente, su orquestación y el análisis de propensión:** Luis.
+- **Base de clientes, backend y despliegue:** Samuel.
+- **Si algo entra o no al alcance:** este documento y `PLAN-CONSTRUCCION.md`. Si no está resuelto
+  ahí, lo decide Jhon en el momento, sin reunión.
+
+## Por qué la base estructurada es el moat, no el agente
+
+Argumento para el pitch, y también criterio de construcción.
+
+El agente conversacional es la cara. La calidad de lo que dice sale de la base estructurada que
+tiene debajo. **Un agente elocuente sobre datos desordenados dice cosas equivocadas con seguridad**,
+que en seguros es peor que no vender.
+
+Por eso el componente central no es un "motor de cotización", es la base de conocimiento
+estructurada: productos, coberturas, elegibilidad, exclusiones, bandas de prima, divulgación. El
+agente es reemplazable; la data limpia y las reglas bien modeladas no.
+
+**Respaldo de dominio:** Jhon centralizó la operación de una agencia de seguros de SURA y vio de
+primera mano que la operación real vive en Excel. Es la prueba que sostiene el argumento ante el
+jurado.
+
+**El segundo ángulo del reto, que casi nadie ve:** automatizar la venta exige primero estructurar el
+conocimiento del producto. Si la data oficial viene ordenada, se mapea directo. Si viene tipo Excel,
+ese gap es parte de la historia: el paso 1 para automatizar la venta es construir esta base.
+
+**Guardarraíl de alcance:** para el MVP no se construye una plataforma de datos ni se migra a nadie
+de Excel, eso es otro producto. Se construye una base semilla bien estructurada de los productos
+que el demo necesita.
 
 ---
 
@@ -516,16 +581,20 @@ bandeja aguante los límites de duración de función) o a un VPS con Docker.
 
 ## Otros documentos del proyecto
 
+- **`PLAN-CONSTRUCCION.md`** — las fases, quién hace qué y dónde queda cada salida. Es el que
+  responde "¿qué hago ahora?".
 - **`UX.md`** — para Sarah. Qué tiene que lograr la pantalla del usuario, el recorrido momento por
   momento, las tres tarjetas interactivas, cómo se muestra el porqué, y la marca.
 - **`ANALISIS-PROPENSION.md`** — para Luis. Instrucciones del análisis: restricciones duras, lo que
   ya se sabe para no repetirlo, las hipótesis a validar, y el contrato de `reglas.json`.
-- `NORTE-PRODUCTO.md` — una página con el alcance, para resolver dudas de "¿esto entra?".
-- `ICP-OTROS/CAPA-CUALITATIVA.md` — el discurso del agente. De aquí sale el system prompt.
+- **`CAPA-CUALITATIVA.md`** — el discurso del agente: ICP, dolor, futuro soñado, las 5 preguntas de
+  discovery y las 6 objeciones con su desarme. De aquí sale el system prompt.
+- `EMULADOR_ARQUITECTURA.md` — esquema de datos y arquitectura del emulador, de Samuel. Vigente
+  salvo el punto de quién decide la recomendación, ver Parte 4.
 - `PLAN-CONSTRUCCION.md` — plan detallado: componentes, workstreams, decisiones con su
   razonamiento completo.
 - `EQUIPO.md` — quién es quién y quién decide qué.
 - `PENDIENTES-DIA-1.md` — orden de trabajo del día 1 al 5.
-- `GUIA-ANALISIS-DATOS.md` — la guía de DuckDB para procesar los 1,5M.
+- `GUIA-ANALISIS-DATOS.md` — la guía de DuckDB para procesar la base de 500K.
 - `SPEC-SCRAPE-CATALOGO.md` — cómo se arma `catalogo-seguros.json`.
 - `DECISION-RETO.md` — por qué elegimos el reto 2. Histórico.

@@ -2,6 +2,35 @@
 
 > Propuesta de Samuel (backend/datos), validada con todo el equipo. La decisión de roles está cerrada: Jhon hace RAG de seguros, Samuel hace BD de clientes, Luis hace agente + análisis.
 
+> ⚠️ **Nota del 23 de julio, propuesta de Jhon, pendiente de que Samuel la revise.**
+>
+> **Lo que sigue vigente y correcto de este documento:** el esquema SQL, la separación de los
+> cuatro objetos de datos, las tablas de `conversaciones` y `auditoria_cambios`, las fases del CRM,
+> y la decisión de usar Postgres con JSONB en vez de un motor llave-valor aparte. Nada de eso se
+> toca. La trazabilidad de esas dos tablas además resuelve el ángulo normativo del reto, que un
+> mentor señaló como importante.
+>
+> **Lo que quedó superado:** el paso del flujo donde el RAG devuelve "resultados ordenados por
+> relevancia" y de ahí sale el análisis de propensión. Eso pone a la búsqueda semántica a decidir
+> qué seguro se recomienda, y el gate número uno del jurado es *"¿por qué a esta persona le
+> mostraste este seguro y no otro?"*. Bajo ese flujo la respuesta honesta es "porque el vector
+> quedó cerca", que es exactamente la caja negra que el brief descalifica.
+>
+> **La corrección, que conserva el trabajo de todos:**
+> - Las **reglas explícitas deciden la FAMILIA** de seguro (vida, salud, accidentes, hogar, viajes,
+>   mascotas, movilidad) y producen la justificación en texto. Salen del análisis de propensión.
+> - El **RAG recupera el PRODUCTO concreto** dentro de esa familia, con coberturas, exclusiones y
+>   condiciones. Ahí sí es la herramienta correcta, porque es un problema de recuperación.
+> - El **LLM conversa y narra.** No decide familia, ni producto, ni prima.
+>
+> Enfoque vigente y detallado en `ANALISIS-PROPENSION.md`. Contexto y razonamiento en `BRIEF.md`,
+> Parte 4.
+>
+> Una segunda observación, menor y discutible: el mecanismo de hash y rehash del análisis es un
+> cache para no recalcular. Con un puñado de conversaciones en un demo cuesta depuración y no compra
+> nada que el jurado vea. Sugerencia de recalcular siempre y dejar el hash documentado como ruta de
+> escalado, pero si ya está diseñado y funciona, no vale la pena tocarlo.
+
 ## Flujo de datos de extremo a extremo
 
 ```

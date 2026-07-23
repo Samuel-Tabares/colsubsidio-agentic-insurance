@@ -194,7 +194,7 @@ Esto es copy, pero define el ritmo visual, así que te toca a ti también.
 - Nada de urgencia falsa. La urgencia sale del costo real del problema.
 
 El discurso completo (las 5 preguntas, el dolor de cada perfil, las objeciones y cómo se desarman)
-está en `ICP-OTROS/CAPA-CUALITATIVA.md`. Vale la pena leerlo: ahí está el lenguaje exacto con el
+está en `CAPA-CUALITATIVA.md`. Vale la pena leerlo: ahí está el lenguaje exacto con el
 que la persona piensa su problema.
 
 ---
