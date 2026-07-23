@@ -17,10 +17,14 @@ This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` — t
 
 | Integrante | Responsabilidades |
 |---|---|
-| **Sarah** | UX del journey conversacional, confianza/explicabilidad, organización marca, psicología consumidor, pitch |
-| **Jhon** | RAG de seguros (catálogo + embeddings + búsqueda semántica), vector store (Pinecone) |
-| **Samuel** | Backend (APIs, integración sistema-front) + arquitectura de BD de clientes (PostgreSQL/Supabase, schema JSONB, escalabilidad) — **el rol detrás de este repo** |
-| **Luis** | Agente: harness, orquestación, análisis de propensión por cliente (JSON crudo + RAG → decisión), AI security |
+| **Jhon** | El cerebro y el RAG: scrape del catálogo → tabla + RAG en Supabase (pgvector), agente conversacional, `recomendar(perfil)`. El cerebro es único y lo llaman los dos canales |
+| **Samuel** | Full stack: levanta el open source (Vocero CRM), las 3 vistas sobre el diseño de Sarah (app admin de 2 secciones, simulador WhatsApp, simulador web), y el backend que conecta los canales al cerebro + la base de clientes (perfil compartido) — **el rol detrás de este repo** |
+| **Sarah** | Diseña las 3 vistas en Claude Design (referencia exacta, no programa el frontend); confianza/explicabilidad, marca, pitch. Puede ajustar detalles de UX sobre el código montado |
+| **Luis** | Análisis de propensión: produce `reglas.json` desde la base, que alimenta el cerebro |
+
+> Reparto rehecho el 2026-07-23 (ver `PLAN-CONSTRUCCION.md` y `BRIEF.md`). Cambió respecto del
+> anterior: el cerebro/agente pasó a Jhon, Samuel se volvió full stack de la superficie, Luis quedó
+> en propensión, Sarah diseña sin programar.
 
 Riesgo crítico identificado por el equipo: que la recomendación de un producto de seguro se sienta arbitraria o poco transparente para el usuario — refuerza el criterio de propensión explicable ya mencionado arriba.
 

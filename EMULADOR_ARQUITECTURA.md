@@ -72,10 +72,12 @@ Después, para la demo real con **Kapso/WhatsApp**, el único cambio es el id: e
 
 | Quién | Responsabilidades | Entrega |
 |---|---|---|
-| **Jhon** | RAG de seguros: extraer catálogo Colsubsidio, generar embeddings, indexar en Pinecone | Vector store consultable con búsqueda semántica ("seguros para jóvenes sin hijos", etc.) |
-| **Samuel** | Backend + BD de clientes: schema Postgres (JSON crudo, análisis, estado_crm), conexión de APIs, escalabilidad KV-like para 1.5M clientes | DB con escritura/lectura eficiente, endpoint backend listo |
-| **Luis** | Agente harness: orquestación (cuándo consultar RAG, cuándo cambiar BD), análisis de propensión (hash + rehash), AI security | Agente que consulta RAG + BD y dirige conversación, con análisis persistente y razonamiento explícito |
-| **Sarah** | UX: emulador dual (gerente + cliente), chat como WhatsApp, confianza/transparencia, marca Colsubsidio | Interfaz usable que demuestre el flujo completo sin narración |
+| **Jhon** | El cerebro y el RAG: scrape del catálogo, RAG en Supabase, agente conversacional, `recomendar(perfil)` | Cerebro único que atienden los dos canales, con recomendación explicable |
+| **Samuel** | Full stack: open source (Vocero), las 3 vistas sobre el diseño de Sarah, los canales y el backend, la base de clientes (perfil compartido) | Superficies + canales funcionando, backend que hospeda y llama al cerebro |
+| **Luis** | Análisis de propensión: caracterización de los códigos, reglas | `reglas.json` que alimenta el cerebro |
+| **Sarah** | Diseña las 3 vistas en Claude Design (no programa); confianza/transparencia, marca, pitch | Diseño de referencia que Samuel implementa |
+
+> Roles rehechos el 2026-07-23. Fuente vigente: `BRIEF.md` y `PLAN-CONSTRUCCION.md`.
 
 ## Arquitectura de datos propuesta
 

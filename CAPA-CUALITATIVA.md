@@ -1,13 +1,16 @@
 # Capa cualitativa — el cerebro de persuasión del agente
 
 > ⚠️ **Actualización del 23 de julio: las líneas de "Señal en la data" quedaron parcialmente
-> obsoletas.** La organización cambió la base y anonimizó cuatro columnas con códigos griegos.
-> - **Siguen válidas** las señales de marcas de consumo (`DROGUERIA`, `HOTELES`, `AGENCIAS`,
->   `PISCILAGO`, `VIVIENDA`), que no se codificaron.
-> - **Se rompieron** las de `SEGMENTO_GRUPO_FAMILIAR` (la de vida y exequial, que era la más
->   fuerte) y `PIRAMIDE_NUEVA` (la de independientes). Ya no se puede leer del dato quién tiene
->   dependientes ni quién es independiente: **hay que preguntarlo**, con las preguntas 1 y 3 del
->   discovery.
+> obsoletas.** La organización cambió la base y anonimizó cuatro columnas con códigos griegos
+> (Colsubsidio confirmó que el diccionario NO se entrega).
+> - **Siguen válidas** las señales de `DROGUERIA`, `HOTELES`, `AGENCIAS` y `VIVIENDA`.
+> - **`PISCILAGO` está muerta:** 100% NO en la base nueva. La señal de accidentes de 3.3 ya no sale
+>   del dato; se busca por edad, ingreso o conversación.
+> - **Se codificaron** `SEGMENTO_GRUPO_FAMILIAR` (vida y exequial, la señal más fuerte) y
+>   `PIRAMIDE_NUEVA` (independientes). No se puede leer del dato quién tiene dependientes ni quién
+>   es independiente: **hay que preguntarlo**, con las preguntas 1 y 3 del discovery. Sí se puede
+>   enmarcar en general ("tu segmento de composición familiar") por el significado conceptual que
+>   Colsubsidio sí dio.
 > - **Todo lo demás de este documento sigue intacto y es el activo más valioso del proyecto:**
 >   el ICP, el dolor real, el futuro soñado, las 5 preguntas y las 6 objeciones con su desarme.
 >
