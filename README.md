@@ -19,7 +19,7 @@ Hackathon Colsubsidio × 30X (22-26 julio 2026, Bogotá) — Reto 2: llevar a un
 
 ## Estado del proyecto
 
-- **Datos de afiliados**: 500,000 registros de uso de productos Colsubsidio (`Usos_Productos_Afiliados_SIN_ID.xlsx`, actualizado 2026-07-23, reemplaza el dataset anterior de 1.56M filas), normalizados y validados. Ver [`scripts/etl_afiliados.py`](scripts/etl_afiliados.py) y [`sql/schema.sql`](sql/schema.sql). El dashboard exploratorio de arriba todavía refleja el dataset viejo — pendiente de regenerar.
+- **Datos de afiliados**: 500,000 registros de uso de productos Colsubsidio (`Usos_Productos_Afiliados_SIN_ID.xlsx`, actualizado 2026-07-23, reemplaza el dataset anterior de 1.56M filas), normalizados y validados. Ver [`scripts/etl_afiliados.py`](scripts/etl_afiliados.py) y [`sql/schema.sql`](sql/schema.sql). El dashboard exploratorio de arriba ya refleja este dataset.
 - **Stack**: aún no cerrado por el equipo (WhatsApp Business API, Pinecone y PostgreSQL/Supabase son las piezas más confirmadas). Ver la tabla de stack y decisiones pendientes en [CLAUDE.md](CLAUDE.md).
 - **Catálogo real de seguros**: pendiente de extraer y modelar desde el link de arriba.
 

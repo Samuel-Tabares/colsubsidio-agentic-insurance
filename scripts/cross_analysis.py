@@ -12,29 +12,36 @@ OUT_JSON = ROOT / "output" / "cross_stats.json"
 CORE_FIELDS = [
     "genero",
     "rango_edad",
-    "categoria_ingreso",
+    "rango_salarial",
+    "categoria",
     "segmento_grupo_familiar",
     "segmento_poblacional",
     "piramide_empresa",
-    "empresa_asociada",
+    "empresa_id",
     "compra_hoteles",
     "compra_piscinas_recreacion",
     "compra_drogueria",
     "compra_viajes_agencias",
     "compra_vivienda",
 ]
-SOCIOECONOMIC_FIELDS = ["categoria_ingreso", "segmento_grupo_familiar", "segmento_poblacional", "piramide_empresa"]
 PRODUCTS = ["compra_hoteles", "compra_piscinas_recreacion", "compra_drogueria", "compra_viajes_agencias", "compra_vivienda"]
-DEMOS = ["genero", "rango_edad", "categoria_ingreso", "segmento_grupo_familiar", "segmento_poblacional", "piramide_empresa", "empresa_asociada"]
+DEMOS = ["genero", "rango_edad", "rango_salarial", "categoria", "segmento_grupo_familiar", "segmento_poblacional", "piramide_empresa", "empresa_id"]
 
 raw = pd.read_csv(CSV, dtype=str, keep_default_na=False)
 
+# Fields with real missingness in this dataset (checked empirically, not assumed):
+# only rango_salarial (~1%) and ciudad (~58%, handled separately below). The four
+# opaque categorical fields (categoria, segmento_*, piramide_empresa) and empresa_id
+# are 100% populated in this extract — unlike the previous dataset, there's no
+# shared-missingness cluster to correct for here.
+FIELDS_WITH_MISSING = [f for f in CORE_FIELDS if (raw[f] == "").any()]
+
 df = raw.copy()
-for b in ["empresa_asociada", "afiliado_al_dia", "compra_hoteles", "compra_piscinas_recreacion",
-          "compra_drogueria", "compra_viajes_agencias", "compra_vivienda"]:
-    df[b] = df[b].map({"True": "Sí", "False": "No"})
-for f in ["categoria_ingreso", "segmento_grupo_familiar", "segmento_poblacional", "piramide_empresa", "ciudad"]:
+for f in CORE_FIELDS:
     df[f] = df[f].replace("", "(sin dato)")
+df["ciudad"] = df["ciudad"].replace("", "(sin dato)")
+for p in PRODUCTS:
+    df[p] = df[p].map({"True": "Sí", "False": "No"})
 
 
 def cramers_v(confusion_matrix: pd.DataFrame) -> float:
@@ -58,10 +65,8 @@ def cramers_v(confusion_matrix: pd.DataFrame) -> float:
     return float(np.sqrt(phi2corr / denom))
 
 
-# --- Cramér's V, pairwise-complete-case: exclude rows missing EITHER field of the pair. ---
-# Using the display df (with "(sin dato)" placeholders) would let two fields' shared
-# missingness masquerade as association between their real values — see the
-# missingness-cluster finding below, where this materially changes several pairs.
+# --- Cramér's V, pairwise-complete-case: exclude rows missing EITHER field of the pair
+# (only matters for pairs involving rango_salarial, the one field with real gaps here). ---
 v_matrix = {}
 v_matrix_naive = {}  # kept for transparency: what you'd get treating "(sin dato)" as a real category
 n_excl = {}
@@ -70,7 +75,8 @@ for a, b in itertools.combinations(CORE_FIELDS, 2):
     ct_naive = pd.crosstab(df[a], df[b])
     v_matrix_naive[key] = round(cramers_v(ct_naive), 4)
 
-    mask = (raw[a] != "") & (raw[b] != "") if a in SOCIOECONOMIC_FIELDS or b in SOCIOECONOMIC_FIELDS else pd.Series(True, index=raw.index)
+    needs_mask = a in FIELDS_WITH_MISSING or b in FIELDS_WITH_MISSING
+    mask = (raw[a] != "") & (raw[b] != "") if needs_mask else pd.Series(True, index=raw.index)
     sub = df[mask]
     ct = pd.crosstab(sub[a], sub[b])
     v_matrix[key] = round(cramers_v(ct), 4)
@@ -89,16 +95,10 @@ for a, b in itertools.combinations(CORE_FIELDS, 2):
         "counts": ct.values.tolist(),
     }
 
-# --- Missingness cluster: do the 4 socioeconomic fields go blank on the same rows? ---
-miss = pd.DataFrame({f: (raw[f] == "") for f in SOCIOECONOMIC_FIELDS})
+# --- Missingness: only rango_salarial has real gaps among the core fields now. ---
 missingness = {
-    "n_missing_all_4": int(miss.all(axis=1).sum()),
-    "n_missing_any_of_4": int(miss.any(axis=1).sum()),
-    "overlap_pct": {  # of rows missing field A, % that are ALSO missing field B
-        a: {b: round(float((miss[a] & miss[b]).sum() / miss[a].sum() * 100), 1) if miss[a].sum() else 0.0
-            for b in SOCIOECONOMIC_FIELDS}
-        for a in SOCIOECONOMIC_FIELDS
-    },
+    "fields_with_missing": FIELDS_WITH_MISSING,
+    "n_missing": {f: int((raw[f] == "").sum()) for f in FIELDS_WITH_MISSING},
 }
 
 # --- Product usage rates AND mean products-used ("engagement") broken down by each demographic ---
@@ -114,32 +114,29 @@ for demo in DEMOS:
         rows.append(entry)
     product_rates_by_demo[demo] = rows
 
-# --- empresa_asociada rate by piramide_empresa: the real driver behind that pair's high V ---
-df["empresa_asociada_bool"] = df["empresa_asociada"] == "Sí"
-empresa_asociada_by_piramide = (
-    df.groupby("piramide_empresa", observed=True)["empresa_asociada_bool"]
-    .agg(["mean", "count"])
-    .reset_index()
-)
-empresa_asociada_by_piramide = [
-    {"value": r["piramide_empresa"], "rate_pct": round(float(r["mean"]) * 100, 2), "n": int(r["count"])}
-    for _, r in empresa_asociada_by_piramide.iterrows()
-]
-empresa_asociada_by_piramide.sort(key=lambda e: -e["rate_pct"])
-
-# --- Largest single segments (biggest addressable cells) across a few key heatmaps ---
+# --- Largest single segments (biggest addressable cells) for the top 2 non-product pairs ---
 def top_cells(a, b, k=5):
     ct = pd.crosstab(df[a], df[b])
     stacked = ct.stack()
     top = stacked.sort_values(ascending=False).head(k)
     return [{"a": ia, "b": ib, "n": int(v), "pct": round(float(v) / len(df) * 100, 2)} for (ia, ib), v in top.items()]
 
-biggest_segments = {
-    "rango_edad|segmento_grupo_familiar": top_cells("rango_edad", "segmento_grupo_familiar"),
-    "categoria_ingreso|segmento_poblacional": top_cells("categoria_ingreso", "segmento_poblacional"),
+top_nonproduct_pairs = [k for k, _ in ranked_pairs if not (k.split("|")[0] in PRODUCTS or k.split("|")[1] in PRODUCTS)][:2]
+biggest_segments = {key: top_cells(*key.split("|")) for key in top_nonproduct_pairs}
+
+# --- Top-ranked pair overall: row-normalized breakdown, whatever it turns out to be ---
+top_pair_key, top_pair_v = ranked_pairs[0]
+top_a, top_b = top_pair_key.split("|")
+top_ct = pd.crosstab(df[top_a], df[top_b], normalize="index") * 100
+top_pair_breakdown = {
+    "pair": top_pair_key,
+    "cramers_v": top_pair_v,
+    "rows": list(top_ct.index.astype(str)),
+    "cols": list(top_ct.columns.astype(str)),
+    "row_pct": top_ct.round(2).values.tolist(),
 }
 
-# --- Ciudad: secondary, optional analysis (per user's own caveat about missingness/Bogotá skew) ---
+# --- Ciudad: secondary, optional analysis (blank in ~58% of records) ---
 city_df = df[df["ciudad"] != "(sin dato)"].copy()
 top_cities = city_df["ciudad"].value_counts().head(10).index.tolist()
 city_sub = city_df[city_df["ciudad"].isin(top_cities)]
@@ -153,7 +150,8 @@ ciudad_product_rates.sort(key=lambda e: -e["n"])
 
 ciudad_v = {}
 for f in CORE_FIELDS:
-    mask = (raw["ciudad"] != "") & ((raw[f] != "") if f in SOCIOECONOMIC_FIELDS else True)
+    needs_mask = f in FIELDS_WITH_MISSING
+    mask = (raw["ciudad"] != "") & ((raw[f] != "") if needs_mask else True)
     sub = df[mask]
     ct = pd.crosstab(sub["ciudad"], sub[f])
     ciudad_v[f] = round(cramers_v(ct), 4)
@@ -169,7 +167,7 @@ out = {
     "crosstabs": crosstabs,
     "missingness": missingness,
     "product_rates_by_demo": product_rates_by_demo,
-    "empresa_asociada_by_piramide": empresa_asociada_by_piramide,
+    "top_pair_breakdown": top_pair_breakdown,
     "biggest_segments": biggest_segments,
     "ciudad_top10_product_rates": ciudad_product_rates,
     "ciudad_cramers_v_vs_core": ciudad_v,
@@ -180,15 +178,13 @@ with open(OUT_JSON, "w", encoding="utf-8") as f:
 
 print("n_total", out["n_total"])
 print("n_with_city", out["n_with_city"])
-print("\nMissingness cluster:", missingness["n_missing_all_4"], "filas sin las 4 (de", missingness["n_missing_any_of_4"], "con al menos 1 faltante)")
+print("\nCampos con datos faltantes:", missingness["n_missing"])
 print("\nTop 15 pares por Cramér's V (pairwise-complete):")
 for k, v in ranked_pairs[:15]:
     naive = v_matrix_naive[k]
     flag = "  <-- inflado por missingness compartido" if naive - v > 0.05 else ""
     print(f"  {k}: {v:.4f}  (naive con sin-dato: {naive:.4f}){flag}")
-print("\nempresa_asociada por piramide_empresa:")
-for e in empresa_asociada_by_piramide:
-    print(f"  {e['value']}: {e['rate_pct']}% (n={e['n']})")
-print("\nMayor segmento individual (edad x grupo familiar):")
-for c in biggest_segments["rango_edad|segmento_grupo_familiar"][:3]:
-    print(f"  {c['a']} + {c['b']}: {c['n']:,} ({c['pct']}%)")
+print(f"\nPar #1 ({top_pair_key}, V={top_pair_v}) — desglose por fila:")
+for row_label, pcts in zip(top_pair_breakdown["rows"], top_pair_breakdown["row_pct"]):
+    top_col_idx = max(range(len(pcts)), key=lambda i: pcts[i])
+    print(f"  {row_label}: {top_pair_breakdown['cols'][top_col_idx]} = {pcts[top_col_idx]}%")
