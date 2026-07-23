@@ -1,4 +1,4 @@
-# Automatización Ventas de Seguros — Colsubsidio × 30X
+# colsubsidio-agentic-insurance
 
 Hackathon Colsubsidio × 30X (22-26 julio 2026, Bogotá) — Reto 2: llevar a un afiliado de **"no sé qué seguro necesito"** a **"quedé asegurado"**, sin que un asesor humano intervenga en el proceso.
 
