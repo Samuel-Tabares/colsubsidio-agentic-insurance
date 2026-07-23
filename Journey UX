@@ -1,0 +1,92 @@
+# Journey UX — Venta automatizada de seguros (WhatsApp + Web)
+
+> **Actualizado 2026-07-23.** Esta versión reemplaza el mapeo anterior (WhatsApp como único canal
+> de cierre, con login y selector de modo dentro de la app). El cambio principal: ahora existen
+> **dos caminos de cierre posibles** — WhatsApp puro o Web — y el usuario elige cuál prefiere en
+> un punto de decisión explícito. El cierre siempre vuelve a WhatsApp para el comprobante final.
+
+Mapeo del recorrido completo del cliente, desde el contacto proactivo hasta la confirmación del
+seguro, con la lógica de bifurcación (if / if not) en cada punto de decisión.
+
+## 1. Contacto proactivo (WhatsApp)
+
+Colsubsidio envía una plantilla personalizada, no un mensaje genérico.
+
+> Ejemplo: *"María, tienes una oferta pre-aprobada para tu curso de inglés"*
+
+La personalización viene del perfil que ya existe en la base de afiliados (o del análisis de
+propensión, si aplica). No es "tenemos seguros, ¿te interesa?" — es específico a la persona.
+
+## 2. Precalificación (WhatsApp, bot)
+
+El bot hace **2-3 preguntas rápidas**, directo en WhatsApp. Con eso arma o actualiza el perfil del
+cliente — el mismo perfil que después va a usar la web, si el usuario decide pasar a ella. No hay
+que repetir esta parte dos veces sin importar el camino que tome después.
+
+## 3. Punto de decisión del usuario 🔀
+
+El bot ofrece dos caminos, sin obligar a ninguno:
+
+- **A. Quedarse en WhatsApp** — para quien prefiere simplicidad y rapidez. El bot cierra el
+  proceso completo ahí mismo.
+- **B. Pasar a la web** — para quien quiere comparar, simular o entender mejor sus opciones.
+  Mismo perfil, mismo contexto, cero repetición.
+
+Este es el punto de bifurcación más importante del journey: de acá en adelante la experiencia
+se diseña dos veces, no una.
+
+## 4a. Camino WhatsApp
+
+Conversación bot-cliente con plantillas → solicitud → decisión → cierre, **todo dentro del chat**.
+Constreñido a lo que WhatsApp permite mostrar de verdad: bubbles, listas, botones, tarjetas
+nativas. Nada que dependa de un componente web.
+
+## 4b. Camino Web
+
+El usuario llega con contexto precargado: nombre, oferta, respuestas ya dadas en la
+precalificación — nada se vuelve a preguntar. Ahí tiene acceso a un
+**simulador/comparador hiperpersonalizado**: la experiencia rica (comparar opciones, ajustar
+cobertura, ver el porqué de la recomendación) vive acá, no como panel lateral opcional de un chat,
+sino como el propósito central de esta pantalla. Solicitud completa → documentos → decisión.
+
+## 5. Cierre y confirmación (siempre vuelve a WhatsApp)
+
+Sin importar por cuál camino cerró el proceso — WhatsApp o Web — se envía la confirmación y el
+PDF por WhatsApp como comprobante final. Es el punto de convergencia: los dos caminos terminan en
+el mismo lugar.
+
+---
+
+## Resumen visual de la lógica if/if not
+
+```
+Colsubsidio envía plantilla personalizada (WhatsApp)
+  │
+  ├─ Precalificación: 2-3 preguntas → arma/actualiza perfil (compartido con la web)
+  │
+  ├─ 🔀 Punto de decisión: ¿se queda en WhatsApp o pasa a la web?
+  │     A. WhatsApp → conversación con plantillas → solicitud → decisión → cierre, todo en el chat
+  │     B. Web       → contexto precargado → simulador/comparador → solicitud → documentos → decisión
+  │
+  └─ Cierre y confirmación: PDF por WhatsApp, sin importar el camino tomado
+```
+
+---
+
+## Qué implica este cambio para el resto del diseño
+
+- **`UX.md` describe una sola pantalla de "conversación en curso"** con tarjetas de comparación,
+  control de cobertura y exclusiones dentro del chat, y una regla explícita de que todo lo que no
+  sea replicable en WhatsApp debe vivir en un panel lateral *prescindible*. Con este journey, esa
+  regla deja de aplicar tal cual: **el camino Web ya no es un panel opcional de la conversación,
+  es una pantalla propia con su propio propósito** (el simulador/comparador). Pendiente decidir con
+  el equipo si `UX.md` se actualiza para reflejar esto.
+- El trabajo ya hecho de "pantalla única S1, sin fricción" (sesión de hoy) probablemente corresponde
+  al **camino Web (4b)** — es donde vive la experiencia rica. El camino WhatsApp (4a) necesita su
+  propio guion, más simple y 100% dentro de las restricciones de plantillas/botones de WhatsApp.
+- La precalificación (etapa 2) es el nuevo punto de partida común a ambos caminos — antes esa
+  función la cumplía el "login/entrada" de la app.
+
+---
+*Documento generado a partir del mapeo de journey actualizado por Sarah, reemplaza la versión
+anterior validada con el equipo (Jhon, Samuel, Santiago). Pendiente re-validar con el equipo.*
