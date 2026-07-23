@@ -171,7 +171,7 @@ pudieras trabajar por un mes, ¿de qué vivirías?"*.
 frente al dato, que es exactamente la arquitectura que ya habíamos elegido. Los datos siguen
 definiendo el mapa, solo que ahora el mapa tiene menos etiquetas.
 
-Contexto completo de cada perfil (dolor real, lenguaje, objeciones) en `ICP-OTROS/CAPA-CUALITATIVA.md`.
+Contexto completo de cada perfil (dolor real, lenguaje, objeciones) en `CAPA-CUALITATIVA.md`.
 Ese documento tiene líneas de "señal en la data" que quedaron obsoletas con el cambio; el resto
 sigue siendo válido.
 
