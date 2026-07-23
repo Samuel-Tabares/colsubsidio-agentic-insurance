@@ -1,13 +1,26 @@
-# UX — La pantalla del usuario
+# UX — La pantalla del usuario (en emulador y en website)
 
 Para Sarah. Qué tiene que lograr la interfaz que ve la persona que va a comprar un seguro.
 No dice cómo se ve, dice qué tiene que pasarle a quien la usa. El cómo es tuyo.
 
 ---
 
-## 1. La única prueba que importa
+# NOTAS
+puentes/canales son 2 principalmente (lo que ve el cliente y por donde se va a contactar con colsubsidio):
 
-El brief lo dice así:
+la webpage (un simulador chatbot con estilo de colsubsidio que por detras funciona exactamente igual que el simulador de whatsapp), va en una seccion entera dedicada a ese chatbot (no es un boton flotante, es una seccion entera de la pagina oficial de colsubsidio), el flujo es cliente->bot aunque el sistema puede incluir contexto de cliente si viene desde otro lugar (whatsapp)
+
+el simulador de whatsapp (un simulador que literalmente es como si fuera whatsapp, su mismo estilo grafico) donde el cliente va a poder contactar Y SER CONTACTADO con flujo cliente->bot y bot->cliente [la idea es despues poder simular mensajes iniciales del bot hacia el cliente]; este simulador de whatsapp es proactivo, el puede contactar directamente al cliente y viceversa, aunque el objetivo principal siempre es mandar al cliente a la webpage con toda la informacion y contexto que se haya recopilado en whatsapp, un cliente puede completar el proceso end 2 end directamente en whatsapp, solo que en la webpage seria mas facil para todos
+
+
+el dashboard de admin es un lugar donde el admin puede ver 2 secciones principales:
+
+seccion CRM: donde evidencia todos los clientes del csv o xlsx que le inyecte con su informacion cruda, otro lugar donde los clinetes ya hayan sido procesados/analizados por ia para dar un breve resumen/analisis de hhacia que direccion se puede ir el cliente, otro lugar donde pueda mostrar ya los clientes con su respectivo analisis, los demas datos, y las fases de los clientes (Prospecto [datos crudos de cliente], Análisis [analizado segun datos crudos], Cotización/negociacion [esta hablando con cliente para ver su mejor seguro], Cierre Ganado [adquiere seguro], Cierre Perdido [rechaza oferta de seguros], En Suscripción [La aseguradora evalúa el riesgo antes de emitir, este proceso se hace manual], Póliza Emitida [pago inicial registrado, este proceso ya se hace manual]) y si deben pasar a follow-manual (nuestrasolucion no alcanza para el proceso entero, pero si mas del 70%).
+
+seccion registros: un lugar donde se va a poder visualizar todo lo que el clinete dijo y todo lo que el bot dijo (tanto desde el simulador de whatsapp como desde el website o como desde llamadas a futuro con sus transcripts usando ia), algo simple, tipo app de mensajes, que tenga informacion cruda del cliente obtenida del csv o xlsx o alguna db, analisis del cliente, y ahi mismo se puede ver el contexto del cliente adicional.
+
+
+## 1. La única prueba que importa
 
 > "El flujo completo se puede recorrer de inicio a fin sin que el equipo lo explique al jurado."
 
@@ -23,44 +36,34 @@ La segunda prueba, en palabras del propio brief: **"¿yo usaría esto para compr
 
 ## 2. Quién es la persona
 
-> **Nota del 23 de julio:** la organización cambió la base de datos. Ahora son 500 mil afiliados en
-> vez de 1,56 millones, y varias columnas vinieron anonimizadas. El perfil de abajo se apoyaba en
-> el segmento más grande de la base anterior y **está pendiente de reconfirmar** con los datos
-> nuevos. La descripción de la persona sigue siendo la mejor hipótesis que tenemos y sirve para
-> diseñar; el número exacto llega con el nuevo perfilado.
+por defecto, 20 a 35 años soltero sin hijos (segun analisis de data 1.5m registros)
 
-Del análisis de la base anterior, el segmento más grande era **"20 a 35 años, sin grupo familiar",
-alrededor de un tercio de la base.** Coincide exactamente con el ejemplo que el brief usa para
-explicar el reto, el de "soltero sin hijos". Esa es la persona por defecto mientras no se diga
-lo contrario.
+**Qué sabe de seguros:** casi nada. No sabe si necesita vida, salud o accidentes. No sabe qué es un deducible ni le importa, solo quiere encontrar lo que mas le convenga.
 
-**Qué sabe de seguros:** casi nada. No sabe si necesita vida, salud o accidentes. No sabe qué es un
-deducible ni le importa.
+**Por qué nunca ha comprado:** no sabe por dónde empezar y porque asume que va a terminar hablando con un vendedor que le va a insistir.
 
-**Por qué nunca ha comprado:** no porque no le alcance, sino porque no sabe por dónde empezar y
-porque asume que va a terminar hablando con un vendedor que le va a insistir.
+**Qué teme al usar esto:** que le vendan algo que no necesita, que después le digan que eso no estaba cubierto.
 
-**Qué teme al usar esto:** que le vendan algo que no necesita, que haya letra menuda, que después
-le digan que eso no estaba cubierto.
-
-**No está comprando una camiseta.** Está decidiendo proteger algo. Eso no significa que la interfaz
-deba ser solemne, significa que no puede sentirse como un formulario ni como una tienda.
+**No está comprando un seguro.** Está decidiendo proteger algo. Eso no significa que la interfaz deba ser solemne, significa que no puede sentirse como un formulario ni como una tienda.
 
 ---
 
-## 3. Cómo está armada la pantalla
+## 3. Cómo está armada la pantalla, son 2 puentes actualmente lo que ve el cliente (emulador-website)
 
-Un **chat que ocupa el centro**, con el estilo de WhatsApp: burbujas, hilo que baja, escritura
-natural. La conversación es el producto, no un accesorio.
+Un **chat que ocupa el centro**, con la estructura de WhatsApp: burbujas, hilo que baja, escritura natural. La conversación es el producto, no un accesorio.
+Pero con el design de colsubsidio y sus colores y todo eso
+
+el puente que conecta el sistema con el cliente mediante el simulador de whatsapp, debe tener todo el ux y design de whatsapp para simularlo al maximo (este es el lugar donde el cliente se contactaria en la vida real con el sistema, mediante whatsapp)
+
+el puente que conecta el sistema con el cliente mediante la website si debe tener todo el ux y design propio de colsubisido, va a ser una seccion dedicada en el apartado de seguros de la pagina oficial de colsubsidio y va a tener la misma funcion y capacidad que el puente de whatsapp, solo es un puente diferente
 
 Dentro del chat, el agente puede mandar **tarjetas interactivas**: bloques que se tocan, no solo
 texto. Ahí viven la comparación, el ajuste de cobertura y las exclusiones.
+para el puente de whatsapp debemos tener en cuenta las tools que actualmente se pueden usar en whatsapp (bootnes, listas, imagenes, links, etc...) y para el puente de website ya puede ser personalizable al 100% la idea es que sea similar a whatsapp o si hay una idea mejor, aplicarla, pero para este mvp la idea es hacer lo mismo que hace whatsapp, documentando que se puede expandir hacia un lugar mas personalizado
 
 **La regla que ordena todo esto:** lo que va dentro del chat tiene que ser algo que WhatsApp
 también podría mostrar (listas, botones, tarjetas). Así el mismo agente sirve en la web y en
-WhatsApp sin rediseñar. Si algo solo funciona en web, va **fuera del chat**, en un panel lateral,
-y tiene que ser prescindible: si el panel desaparece, la conversación sigue teniendo sentido.
-
+WhatsApp sin rediseñar.
 ---
 
 ## 4. El recorrido, momento por momento
