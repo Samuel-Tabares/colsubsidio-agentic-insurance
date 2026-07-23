@@ -13,9 +13,9 @@ Hackathon Colsubsidio × 30X (22-26 julio 2026, Bogotá) — Reto 2: llevar a un
 | Integrante | Rol |
 |---|---|
 | Sarah | UX del journey conversacional, confianza/explicabilidad, pitch |
-| Jhon | Orquestación conversacional (flujo del agente, integración WhatsApp API) |
-| Samuel | Backend y arquitectura de datos (PostgreSQL, RAG/Pinecone) |
-| Santiago | Capa de IA/modelos y decisión, infraestructura cloud |
+| Jhon | RAG de seguros (catálogo, embeddings, búsqueda semántica) |
+| Samuel | Backend y arquitectura de BD de clientes (PostgreSQL/Supabase, schema JSONB) |
+| Luis | Agente (harness, orquestación, análisis de propensión por cliente, seguridad AI) |
 
 ## Estado del proyecto
 

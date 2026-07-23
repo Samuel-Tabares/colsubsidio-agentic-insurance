@@ -15,12 +15,12 @@ This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` — t
 
 ## Equipo
 
-| Integrante | Rol propuesto |
+| Integrante | Responsabilidades |
 |---|---|
-| Sarah | UX del journey conversacional, confianza/explicabilidad, pitch |
-| Jhon | Orquestación conversacional (flujo del agente, integración WhatsApp Business API) |
-| Samuel | Backend y arquitectura de datos (PostgreSQL, RAG/Pinecone) — **el rol detrás de este repo** |
-| Santiago | Capa de IA/modelos y decisión, infraestructura cloud |
+| **Sarah** | UX del journey conversacional, confianza/explicabilidad, organización marca, psicología consumidor, pitch |
+| **Jhon** | RAG de seguros (catálogo + embeddings + búsqueda semántica), vector store (Pinecone) |
+| **Samuel** | Backend (APIs, integración sistema-front) + arquitectura de BD de clientes (PostgreSQL/Supabase, schema JSONB, escalabilidad) — **el rol detrás de este repo** |
+| **Luis** | Agente: harness, orquestación, análisis de propensión por cliente (JSON crudo + RAG → decisión), AI security |
 
 Riesgo crítico identificado por el equipo: que la recomendación de un producto de seguro se sienta arbitraria o poco transparente para el usuario — refuerza el criterio de propensión explicable ya mencionado arriba.
 
@@ -28,18 +28,18 @@ Riesgo crítico identificado por el equipo: que la recomendación de un producto
 
 Hackathon-sponsored tools the team intends to use (get them for the sponsor perks) — **roles below reflect `RETO_2_SEGUROS.md` where confirmed, otherwise still a working hypothesis**:
 
-| Tool | Role | Status |
-|---|---|---|
-| WhatsApp Business API | Primary conversational channel (Jhon's scope) | confirmed intent, not locked |
-| Pinecone | Vector store for the RAG layer (Samuel's scope, per team doc) | confirmed intent, not provisioned |
-| PostgreSQL / Supabase | Relational data (affiliates, catalog, sessions) — `sql/schema.sql` targets it | confirmed, not yet provisioned |
-| Gemini API | LLM reasoning for the agent (propensity + conversation) | candidate |
-| Houston AI | No-code AI agent builder (Colombian startup, ex-TaxFlow) — likely orchestrates the agent itself | candidate |
-| Hugging Face | Embeddings model for the RAG layer, or an open model alongside Gemini | candidate, role unconfirmed |
-| Lovable | Frontend generation, if a web surface is needed alongside WhatsApp | candidate |
-| ElevenLabs | Voice channel (TTS/STT), if the flow goes beyond text | candidate, only if voice is in scope |
-| Hosting | Undecided — whatever the hackathon sponsors provide credits for | pending |
-| Auth (anonymous-until-close vs. login-first) | Team decision pending | pending |
+| Tool | Role | Owner | Status |
+|---|---|---|---|
+| WhatsApp Business API | Primary conversational channel | Sarah/Frontend | confirmed intent, not locked |
+| Pinecone | Vector store for RAG (seguros catalog + embeddings) | Jhon | confirmed intent, not provisioned |
+| PostgreSQL / Supabase | Client data store (affiliates, profiles, conversations, CRM state) — `sql/schema.sql` targets it | Samuel | confirmed, not yet provisioned |
+| Gemini API (or alt LLM) | LLM reasoning for agent logic (propensity analysis + conversation) | Luis | candidate |
+| Houston AI | No-code agent builder (Colombian startup, ex-TaxFlow) — possible harness for agent | Luis | candidate |
+| Hugging Face | Embeddings model for RAG (seguros catalog embeddings) | Jhon | candidate, role unconfirmed |
+| Lovable | Frontend web UI generation (if needed alongside WhatsApp) | Sarah | candidate |
+| ElevenLabs | Voice channel (TTS/STT), if voice is in scope | Sarah/Luis | candidate, only if voice is in MVP |
+| Hosting | Backend + database hosting | Samuel | pending (depends on hackathon sponsors) |
+| Auth | Anonymous-until-close vs. login-first | Luis/Samuel | pending team decision |
 
 Update this table as the team locks in decisions — don't let it drift out of sync with reality.
 

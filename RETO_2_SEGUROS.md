@@ -83,12 +83,12 @@ Esto no es instrucción de qué construir, es el contexto del problema.
 
 ## Equipo asignado a este reto
 
-| Integrante | Rol propuesto |
+| Integrante | Responsabilidades |
 |---|---|
-| Sarah | UX del journey conversacional, confianza/explicabilidad, pitch |
-| Jhon | Orquestación conversacional (flujo del agente, integración WhatsApp API) |
-| Samuel | Backend y arquitectura de datos (PostgreSQL, RAG/Pinecone) |
-| Santiago | Capa de IA/modelos y decisión, infraestructura cloud |
+| Sarah | UX del journey conversacional, confianza/explicabilidad, organización marca, psicología consumidor, pitch |
+| Jhon | RAG de seguros (catálogo + embeddings + búsqueda semántica), vector store (Pinecone) |
+| Samuel | Backend (APIs, integración sistema-front) + arquitectura de BD de clientes (PostgreSQL/Supabase, escalabilidad KV-like) |
+| Luis | Agente: harness, orquestación, análisis de propensión por cliente (JSON crudo + RAG → decisión), AI security |
 
 ---
 *Documento generado a partir de capturas de las diapositivas oficiales y del brief informal del reto. Si algo no coincide exactamente con lo presentado, por favor corregir directamente en este archivo antes de compartirlo con el resto del equipo.*
