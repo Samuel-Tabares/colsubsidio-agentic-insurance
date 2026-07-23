@@ -14,9 +14,8 @@ No dice cómo se ve, dice qué tiene que pasarle a quien la usa. El cómo es tuy
 >    sección 2.
 > 3. **Los colores de la sección 9 estaban desactualizados** — usaban la reconstrucción no oficial
 >    vieja en vez del material oficial real que ya tenemos.
-> 4. **Las fases del CRM (sección 0.3) no coinciden con las que propuso Samuel** en
->    `EMULADOR_ARQUITECTURA.md`. Todavía no está en `sql/schema.sql`, así que no ha costado nada
->    corregirlo — falta que Samuel lo confirme.
+> 4. **Las fases del CRM (sección 0.3) están pendientes de confirmar con Samuel** y todavía no
+>    están escritas en `sql/schema.sql`. Falta esa conversación corta antes de comprometerlas.
 
 ---
 
@@ -63,11 +62,9 @@ análisis, sus datos y su fase. Fases propuestas:
 Con bandera de **follow-manual** cuando el sistema no alcanza a resolver el proceso completo, pero
 sí más del 70%.
 
-> ⚠️ **Pendiente:** esta secuencia de fases es distinta a la que propuso Samuel en
-> `EMULADOR_ARQUITECTURA.md` (`prospecto → contactado → necesidad_identificada → oferta_presentada →
-> en_negociacion → comprado → descartado`). Esta versión es más realista al negocio de seguros
-> porque incluye los pasos reales post-venta (suscripción, emisión). Como todavía no está escrita en
-> `sql/schema.sql`, se puede resolver con una conversación corta antes de que Samuel la comprometa.
+> ⚠️ **Pendiente:** esta secuencia de fases todavía no está confirmada con Samuel ni escrita en
+> `sql/schema.sql`. Es más realista al negocio de seguros porque incluye los pasos reales post-venta
+> (suscripción, emisión). Resolver con una conversación corta antes de comprometerla en el schema.
 
 **Registros.** Todo lo que dijo el cliente y todo lo que dijo el bot, sin importar el canal de
 origen (WhatsApp, web, y a futuro llamadas transcritas con IA) — simple, tipo app de mensajes, con
