@@ -3,7 +3,7 @@
 **Documento único.** Brief oficial, análisis, estado del proyecto y lo que falta definir.
 Autocontenido: quien lo lea entiende el proyecto sin abrir nada más.
 
-**Actualizado:** 2026-07-23, día 2.
+**Actualizado:** 2026-07-23, día 2, tras el cambio de base de datos de la organización.
 **Repo del equipo:** `github.com/Samuel-Tabares/colsubsidio-agentic-insurance`.
 Roles y arquitectura del emulador viven allá; este documento es el contexto y el criterio.
 
@@ -26,7 +26,7 @@ asegurada" sin hablar con nadie.
 y el sistema le recomienda un seguro concreto y le muestra **por qué ese y no otro**.
 
 **La idea en una frase.** Los datos definen el mapa, la conversación ubica a la persona en él.
-Tenemos 1,56 millones de perfiles de afiliados que nos dicen qué necesita cada tipo de persona.
+Tenemos 500 mil perfiles de afiliados que nos dicen qué necesita cada tipo de persona.
 La conversación nos dice cuál de esos tipos es quien está escribiendo.
 
 **Las dos preguntas que decide el jurado.**
@@ -209,79 +209,138 @@ de gemelos hecho interactivo en lugar de actuado.
 
 ## La base de afiliados
 
-~1.500.000 registros, CSV separado por punto y coma. Columnas reales, verificadas contra el
-archivo:
+> ⚠️ **La organización cambió la base el 23 de julio.** Es un archivo distinto, no una corrección
+> del anterior: cambió el tamaño, cambiaron las columnas, y **los valores de cuatro columnas
+> quedaron anonimizados con códigos griegos.** Todo análisis hecho sobre la versión de 1,56M queda
+> pendiente de rehacer. Si alguien está trabajando con la base vieja, para y cambia de archivo.
 
-`SERIE, NOMBRE_COMPLETO, GENERO, RANGO_EDAD, CATEGORIA, SEGMENTO_GRUPO_FAMILIAR,
-SEGMENTO_POBLACIONAL, PIRAMIDE_NUEVA, EMPRESA_FOCO, ESTADOAFILIADO, CIUDAD_AFILIADO,
+**~500.000 registros**, CSV separado por punto y coma. Quince columnas:
+
+`SERIE, GENERO, RANGO_EDAD, RANGO_SALARIAL, CATEGORIA, SEGMENTO_GRUPO_FAMILIAR,
+SEGMENTO_POBLACIONAL, PIRAMIDE_NUEVA, EMPRESA_FOCO, CIUDAD_AFILIADO,
 HOTELES, PISCILAGO, DROGUERIA, AGENCIAS, VIVIENDA`
 
 Las últimas cinco son marcas de consumo 2026, sí o no: si el afiliado compró en droguerías,
-hoteles, recreación, agencias de viajes y vivienda.
+recreación, agencias de viajes y vivienda.
 
-**Ya tenemos el archivo completo y está procesado.** Samuel construyó el ETL: 1.560.000 filas
-normalizadas y validadas fila por fila contra la fuente, con esquema Postgres. Los CSV crudo y
-limpio están gitignored por tamaño y por PII. Repo del equipo:
-`github.com/Samuel-Tabares/colsubsidio-agentic-insurance`.
+### Qué cambió respecto de la base anterior
 
-### 4 hallazgos, para no repetir el trabajo
+**Se fueron dos columnas:** `NOMBRE_COMPLETO` (el problema de PII quedó resuelto en la fuente) y
+`ESTADOAFILIADO`.
 
-1. **Hay PII.** `NOMBRE_COMPLETO` viene con nombres reales, pese a que la documentación oficial
-   dice que está anonimizada. Se descarta en la ingesta, antes de cualquier análisis, y
-   **nunca sube a ningún repositorio.** Hay que avisarle a la organización.
-2. **No hay variable objetivo.** La quinta marca es `VIVIENDA`, no un indicador de compra de
-   seguros. No se puede entrenar un modelo supervisado de propensión.
-3. **La muestra de 75 filas está filtrada.** `DROGUERIA` es SI en todas y `HOTELES`, `AGENCIAS`
-   y `VIVIENDA` son NO en todas. Sirve para el vocabulario de valores, no para distribuciones.
-4. **Calidad irregular.** `CIUDAD_AFILIADO` vacía en el 65% de la muestra, y hay un typo en los
-   propios datos (`AFILLIADO` con doble L). Las reglas deben degradar con elegancia.
+**Entró una columna, y es una ganancia:** `RANGO_SALARIAL`, legible y en salarios mínimos
+(`Menor al SM`, `Entre 1 y 1.5`, `Entre 8 y 10`). Es mejor variable de capacidad de pago que la
+`CATEGORIA` anterior, que además ahora viene codificada.
 
-### Mapeo señal a familia de producto (base del ruteo)
+**Cuatro columnas pasaron a código griego opaco.** Este es el cambio que más duele:
 
-- `DROGUERIA` → salud, asistencias médicas
-- `HOTELES` y `AGENCIAS` → asistencia médica en viajes
-- `PISCILAGO` → accidentes personales
-- `VIVIENDA` → hogar (contenido, arrendamiento)
-- `SEGMENTO_GRUPO_FAMILIAR` con dependientes → vida, exequial
-- `PIRAMIDE_NUEVA` igual a Independiente → accidentes, salud
+- `CATEGORIA`: antes `A`, `B`, `C`. Ahora `ZETA`, `SIGMA`, `PI`, `MU`.
+- `SEGMENTO_GRUPO_FAMILIAR`: antes `FAMILIA MONOPARENTAL`, `FAMILIA NUCLEAR INTEGRAL`. Ahora
+  `LAMBDA`, `CHI`, `RHO`, `EPSILON`, `THETA`.
+- `SEGMENTO_POBLACIONAL`: antes `Básico`. Ahora `PI`, `TAU`, `ETA`, `OMEGA`.
+- `PIRAMIDE_NUEVA`: antes `2 Medianas`, `6.2 Independiente`. Ahora `DELTA`, `PSI`, `XI`,
+  `UPSILON`, `OMICRON`.
+- `EMPRESA_FOCO`: ahora seudonimizada como `EMP_000001`.
 
-Nota de alto valor: `PIRAMIDE_NUEVA` clasifica a la empresa empleadora, no a la persona. Un
-independiente y un empleado de empresa grande con el mismo perfil familiar tienen necesidades
-distintas porque uno tiene respaldo institucional y el otro no. Es un por qué muy defendible.
+**`CIUDAD_AFILIADO` viene mucho más poblada** que antes (`BOGOTA D.C.`, `CHIA`, `SOACHA`), aunque
+sigue teniendo vacíos. Hay que medir cuántos.
 
-Nota: `CATEGORIA` en una caja de compensación es el rango salarial. Es la variable de capacidad
-de pago que permite no recomendar una prima que la persona no puede pagar.
+### La consecuencia grande
 
-### Lo que dijo el análisis sobre las 1,56M filas
+**Ya no sabemos qué significa cada código.** Nuestro mapeo de señal a familia de seguro decía cosas
+como "familia monoparental sugiere vida, porque un solo ingreso sostiene a todos". Con `LAMBDA` en
+vez de `FAMILIA MONOPARENTAL`, ese razonamiento no se puede escribir.
 
-Del análisis de asociación cruzada de Samuel (Cramér's V corregido por sesgo, 66 pares de campos).
-Estos números mandan sobre cualquier supuesto sacado de la muestra de 75.
+Tres caminos, en orden de preferencia:
 
-**El consumo casi no correlaciona con el perfil (V ≤ 0,15).**
-Esto NO significa que las marcas no sirvan, significa lo contrario: **son señal independiente**.
-Saber que alguien tiene 35 años y familia monoparental no permite adivinar si compra en droguería,
-así que la marca aporta información que el perfil demográfico no tiene. Dos señales independientes
-suman, no se pisan.
-Consecuencia práctica: **las marcas no se pueden inferir para un usuario nuevo.** Al que no está en
-la base hay que preguntarle, que es justo lo que hacen las 5 preguntas de discovery.
-Advertencia honesta: la base no tiene variable de compra de seguros, así que nada de esto prueba
-que la marca prediga necesidad de seguro. Sigue siendo una hipótesis razonada y así se presenta.
+1. **Pedirle a la organización el diccionario de códigos.** Es gratis, toma un mensaje, y si lo dan
+   vuelve todo lo anterior. **Hacerlo ya.**
+2. **Construir las reglas solo sobre los campos legibles:** `RANGO_EDAD`, `RANGO_SALARIAL`,
+   `GENERO`, `CIUDAD_AFILIADO` y las cinco marcas de consumo. Alcanza para recomendar y es
+   completamente explicable.
+3. **Describir los códigos por su comportamiento observable, sin afirmar qué significan.** En vez de
+   "eres monoparental", la razón dice "estás en el grupo que más gasto de salud tiene en la base,
+   con 61% de compra en droguería". Es honesto, es verificable con un conteo, y responde el gate
+   del jurado sin inventar la etiqueta.
 
-**El segmento más grande es "20-35 años sin grupo familiar", con el 33% de la base.**
-Un tercio de 1,56 millones de personas, y es literalmente el "soltero sin hijos" del ejemplo de
-gemelos del brief. **Esa es la persona por defecto del demo.**
+Los caminos 2 y 3 se combinan y funcionan aunque nunca llegue el diccionario.
 
-**`piramide` y `empresa_asociada` tienen V = 0,84, asociación estructural.**
-`empresa_asociada` es casi una bandera de subconjunto del tramo "1 Grandes". Usarlas como dos
-señales separadas es contarse la misma cosa dos veces. Se elige una.
+### Hallazgos que siguen vigentes con la base nueva
 
-**`ciudad` es el campo más débil (V ≤ 0,06)** y viene vacío en buena parte. No se usa para decidir.
-Como mucho, para el canal.
+1. **No hay variable objetivo.** La quinta marca es `VIVIENDA`, no un indicador de compra de
+   seguros. **No se puede entrenar un modelo supervisado de propensión**, y tampoco un modelo
+   puede decidir en runtime sin romper el gate de explicabilidad.
+2. **Las reglas deben degradar con elegancia.** Van a correr sobre perfiles incompletos y sobre
+   gente que no está en la base. Una regla que evalúa un campo vacío no dispara, no lanza error.
+3. **Fijar los strings exactos que trae el archivo.** Los datos reales traen erratas: en la base
+   anterior había un `AFILLIADO` con doble L. Si la regla no escribe el valor tal cual, no matchea.
+4. **Reportar siempre el tamaño absoluto del segmento junto al porcentaje.** Un 80% sobre 50
+   personas no es un hallazgo.
 
-**Trampa metodológica que Samuel detectó y corrigió**, vale la pena tenerla presente: tratar
-"(sin dato)" como una categoría normal inflaba la asociación entre los campos socioeconómicos,
-porque 13.910 registros vienen vacíos en los cuatro a la vez. Dos campos parecían relacionados en
-parte porque se quedan en blanco en las mismas filas, no porque sus valores reales correlacionen.
+### Hallazgos que quedaron obsoletos con el cambio de base
+
+- **La PII.** `NOMBRE_COMPLETO` ya no existe en la fuente. Se mantiene la advertencia solo para que
+  nadie siga trabajando con una copia de la base vieja, que sí traía nombres reales.
+- **Todo el análisis sobre las 1,56M filas.** Samuel había corrido un estudio de asociación cruzada
+  con Cramér's V sobre 66 pares de campos, con hallazgos valiosos. **Hay que rehacerlo sobre los
+  500K nuevos.** Dos resultados que conviene volver a medir antes que nada:
+  - Que el consumo casi no correlacionara con el perfil (V ≤ 0,15), que era la base para tratar las
+    marcas como señal independiente que suma.
+  - Que el segmento más grande fuera "20-35 años sin grupo familiar" con el 33% de la base. Esa
+    etiqueta ya no existe, aunque el rango de edad sigue siendo legible y esa mitad se puede
+    recuperar.
+- **La trampa metodológica del "(sin dato)" sigue aplicando** aunque los números cambien: tratar el
+  vacío como una categoría normal infla la asociación entre campos que se quedan en blanco en las
+  mismas filas. Al cruzar, excluir por par las filas sin alguno de los dos campos.
+
+### Mapeo señal a familia de producto
+
+**Lo que sigue en pie**, porque las marcas de consumo no se codificaron:
+
+- `DROGUERIA` → salud, asistencias médicas. Ya hay gasto de bolsillo recurrente en salud.
+- `HOTELES` o `AGENCIAS` → asistencia médica en viajes.
+- `PISCILAGO` → accidentes personales. Vida activa, familia en recreación.
+- `VIVIENDA` → hogar, contenido y arrendamiento.
+- `RANGO_EDAD` → modula la familia y el monto.
+- `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
+  ofrecerle a esa persona. Es la variable nueva y es la mejor que tenemos para no recomendar algo
+  que no puede pagar.
+
+**Lo que se rompió con la anonimización:**
+
+- `SEGMENTO_GRUPO_FAMILIAR` con dependientes → vida y exequial. Ya no se puede escribir, porque no
+  sabemos qué código corresponde a monoparental.
+- `PIRAMIDE_NUEVA` igual a independiente → accidentes y salud. Igual problema.
+
+Esas dos eran señales fuertes. La de familia era la de mayor peso de todas, porque define el eje
+del ejemplo de gemelos del brief. **Se recuperan por dos vías:** con el diccionario de códigos si
+la organización lo entrega, o preguntándolas en la conversación, que es lo que ya hacen las
+preguntas 1 y 3 del discovery ("¿quién depende económicamente de ti hoy?" y "si no pudieras
+trabajar por un mes, ¿de qué vivirías?").
+
+Vale la pena notar el efecto secundario: **la anonimización sube el peso de la conversación frente
+al dato**, que es exactamente la arquitectura que ya habíamos elegido. Los datos siguen definiendo
+el mapa, solo que ahora el mapa tiene menos etiquetas y la conversación aporta más.
+
+### Lo primero que hay que medir en la base nueva
+
+Nada de lo que sigue se sabe todavía. Son las preguntas que el perfilado tiene que responder antes
+de escribir una sola regla. Detalle e instrucciones en `ANALISIS-PROPENSION.md`.
+
+1. **Cuántos códigos distintos tiene cada columna griega y cómo se reparten.** Si
+   `SEGMENTO_GRUPO_FAMILIAR` tiene cinco códigos y sus tamaños se parecen a los de las cinco
+   categorías legibles de la base anterior, es una pista fuerte, aunque no una prueba.
+2. **Qué comportamiento observable caracteriza a cada código.** Para cada uno: distribución de edad,
+   de rango salarial, y tasa de cada marca de consumo. Eso permite describirlo por lo que hace sin
+   afirmar qué es, que es el camino 3 de arriba.
+3. **Si el consumo sigue siendo señal independiente del perfil.** Se vuelve a medir la asociación.
+   El resultado cambia si las reglas suman o se pisan.
+4. **Cuál es el segmento más grande** con los campos legibles, empezando por rango de edad. De ahí
+   sale la persona por defecto del demo.
+5. **Cuánto vacío hay en `CIUDAD_AFILIADO`** ahora que viene más poblada, y en el resto.
+6. **Cuánto se solapan `PIRAMIDE_NUEVA` y `EMPRESA_FOCO`.** En la base anterior eran casi la misma
+   cosa (V = 0,84), y usar las dos como señales separadas inflaba el score contando la misma
+   evidencia dos veces.
 
 ## El catálogo
 
@@ -389,8 +448,10 @@ deja de ser prudencia y pasa a ser la única ruta viable.
 ## Existe y sirve
 
 - Este brief, con el análisis y los hallazgos de la base.
-- **La capa de datos, entregada.** ETL de las 1,56M filas validado fila por fila, esquema Postgres
-  con auditoría, y el análisis de asociación cruzada. Trabajo de Samuel, ya en el repo.
+- **La tubería de datos, construida y probada.** ETL validado fila por fila, esquema Postgres con
+  auditoría, y el análisis de asociación cruzada. Trabajo de Samuel, ya en el repo. **Ojo: corrió
+  sobre la base vieja de 1,56M.** La tubería sirve tal cual, hay que reapuntarla al archivo nuevo
+  de 500K y volver a correr el perfilado y los cruces. Los resultados no se heredan.
 - **El repo del equipo**, con la arquitectura del emulador documentada y el esquema SQL.
 - El discurso completo del agente en `CAPA-CUALITATIVA.md`: ICP, dolor, futuro soñado, las 5
   preguntas de discovery y las 6 objeciones con su desarme, por familia de producto. De ahí
@@ -403,6 +464,10 @@ deja de ser prudencia y pasa a ser la única ruta viable.
 
 - **El catálogo estructurado.** El scrape no se ha corrido, y es el insumo del RAG. Es el camino
   crítico.
+- **El perfilado de la base nueva.** 500K filas con cuatro columnas en código griego. Sin esto no
+  se pueden escribir reglas.
+- **El diccionario de códigos.** Hay que pedírselo a la organización hoy mismo. Es un mensaje y
+  cambia por completo cuánta señal tenemos.
 - La vista cliente, que es lo único que el jurado recorre solo.
 - El motor de reglas `recomendar(perfil)` y su `reglas.json`.
 
