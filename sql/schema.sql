@@ -1,5 +1,5 @@
--- Modelo de datos para Usos_Productos_Afiliados_SIN_ID.csv
--- Generado a partir del análisis de 1,566,028 registros (ver output/etl_report.txt)
+-- Modelo de datos para Usos_Productos_Afiliados_SIN_ID.xlsx
+-- Generado a partir del análisis de 500,000 registros (ver output/etl_report.txt)
 
 CREATE TYPE genero_enum AS ENUM ('F', 'M');
 
@@ -11,45 +11,63 @@ CREATE TYPE rango_edad_enum AS ENUM (
     'Mayor de 55 años'
 );
 
--- Categoría oficial de Caja de Compensación Familiar por SMLMV del afiliado.
--- Es el proxy de ingresos disponible en la fuente; el CSV no trae cifras de salario.
-CREATE TYPE categoria_ingreso_enum AS ENUM ('A', 'B', 'C', 'D');
+-- Rango salarial real en SMLV. Reemplaza a la antigua categoria_ingreso_enum (A-D);
+-- el dataset anterior no traía cifras de salario, este sí.
+CREATE TYPE rango_salarial_enum AS ENUM (
+    'Menor al SMLV',
+    'Menor a 2 SMLV',
+    'Entre 1 y 1.5 SMLV',
+    'Entre 1.5 y 2 SMLV',
+    'Entre 2 y 2.5 SMLV',
+    'Entre 2 y 4 SMLV',
+    'Entre 2.5 y 3 SMLV',
+    'Entre 3 y 4 SMLV',
+    'Entre 4 y 6 SMLV',
+    'Entre 4 y 8 SMLV',
+    'Entre 6 y 8 SMLV',
+    'Entre 8 y 10 SMLV',
+    'Entre 8 y 19 SMLV',
+    'Entre 10 y 20 SMLV',
+    'Entre 20 y 30 SMLV',
+    'Mayor a 30 SMLV'
+);
 
+-- Tokens opacos sin codebook disponible (decisión de equipo: usarlos tal cual como
+-- valores de referencia). Antes traía categoría oficial de ingreso A-D con significado
+-- conocido; ese significado ya no está disponible en esta versión del dataset.
+CREATE TYPE categoria_enum AS ENUM ('SIGMA', 'PI', 'ZETA', 'MU');
+
+-- Tokens opacos sin codebook disponible. Antes traía el tipo de unidad familiar en texto
+-- (p. ej. "FAMILIA MONOPARENTAL"); ese significado ya no está disponible.
 CREATE TYPE segmento_grupo_familiar_enum AS ENUM (
-    'AFILIADO SIN GRUPO FAMILIAR',
-    'FAMILIA MONOPARENTAL',
-    'FAMILIA MONOPARENTAL AMPLIADA',
-    'FAMILIA NUCLEAR AMPLIADA',
-    'FAMILIA NUCLEAR INTEGRAL',
-    'PAREJA CONYUGAL'
+    'LAMBDA', 'RHO', 'EPSILON', 'IOTA', 'CHI', 'THETA', 'PI'
 );
 
-CREATE TYPE segmento_poblacional_enum AS ENUM ('Alto', 'Básico', 'Joven', 'Medio');
+-- Tokens opacos sin codebook disponible. Antes traía el tier poblacional en texto
+-- (p. ej. "Básico", "Joven"); ese significado ya no está disponible.
+CREATE TYPE segmento_poblacional_enum AS ENUM ('TAU', 'PI', 'ETA', 'OMEGA', 'XI');
 
--- Tamaño/tipo de la empresa afiliadora (o régimen del afiliado en 6.x)
+-- Tokens opacos sin codebook disponible. Antes traía el tamaño/tipo de empresa en texto
+-- (p. ej. "1 Grandes"); ese significado ya no está disponible.
 CREATE TYPE piramide_empresa_enum AS ENUM (
-    '1 Grandes',
-    '2 Medianas',
-    '3 Empresarial Top',
-    '4 Empresarial Estandar',
-    '5 Micro Transaccional',
-    '5 Micro Transaccional Colsubsidio',
-    '6.1 Facultativo',
-    '6.2 Independiente',
-    '6.3 Pensionado'
+    'ETA', 'XI', 'UPSILON', 'DELTA', 'BETA', 'OMEGA', 'KAPPA', 'LAMBDA', 'OMICRON', 'PSI'
 );
+
+-- ID seudonimizado de la empresa afiliadora. Antes era un flag booleano
+-- (empresa_asociada = EMPRESA_FOCO == 'X'); ahora el dataset trae IDs reales
+-- (solo 2 distintos en todo el extracto: EMP_000001, EMP_000002).
+CREATE TYPE empresa_id_enum AS ENUM ('EMP_000001', 'EMP_000002');
 
 CREATE TABLE afiliados_productos (
     serie                        INTEGER PRIMARY KEY,
-    nombre_completo              TEXT,
     genero                       genero_enum,
     rango_edad                   rango_edad_enum,
-    categoria_ingreso            categoria_ingreso_enum,
+    rango_salarial               rango_salarial_enum,
+    categoria                    categoria_enum,
     segmento_grupo_familiar      segmento_grupo_familiar_enum,
     segmento_poblacional         segmento_poblacional_enum,
     piramide_empresa             piramide_empresa_enum,
-    empresa_asociada             BOOLEAN NOT NULL DEFAULT FALSE,
-    afiliado_al_dia              BOOLEAN NOT NULL DEFAULT FALSE,
+    empresa_id                   empresa_id_enum,
     ciudad                       TEXT,
     compra_hoteles               BOOLEAN NOT NULL DEFAULT FALSE,
     compra_piscinas_recreacion   BOOLEAN NOT NULL DEFAULT FALSE,
@@ -59,4 +77,4 @@ CREATE TABLE afiliados_productos (
 );
 
 CREATE INDEX idx_afiliados_ciudad ON afiliados_productos (ciudad);
-CREATE INDEX idx_afiliados_categoria ON afiliados_productos (categoria_ingreso);
+CREATE INDEX idx_afiliados_rango_salarial ON afiliados_productos (rango_salarial);
