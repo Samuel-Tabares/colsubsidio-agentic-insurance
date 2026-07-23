@@ -249,13 +249,10 @@ real que le compartieron al equipo (paleta de colores institucional y logotipos)
 - **Nunca texto claro sobre amarillo**, no se lee.
 - **Tono de marca:** institucional pero cálido. Lenguaje claro, sin tecnicismos fríos.
 
-**Tipografía: pendiente por confirmar.** El material oficial recibido no incluye guía tipográfica —
-Poppins/Inter era un supuesto de trabajo, no un dato confirmado. Usar como borrador hasta que llegue
-la guía real o el equipo decida una por defecto.
+**Tipografía: Poppins/Inter 
 
 **Logotipo:** solo se recibió el isotipo (amarillo, sobre fondo transparente) y el logotipo completo
-en su versión blanca/reversada (para fondos oscuros). No hay versión a color para fondos claros —
-si hace falta, hay que pedirla o construirla a partir de los colores de arriba.
+en su versión blanca/reversada (para fondos oscuros). 
 
 El tono de marca y lo que necesita este producto coinciden, así que no hay que pelear con la marca
 para lograr cercanía.
