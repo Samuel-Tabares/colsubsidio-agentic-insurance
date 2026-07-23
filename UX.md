@@ -1,24 +1,79 @@
-# UX — La pantalla del usuario (en emulador y en website)
+# UX — La pantalla del usuario (emulador WhatsApp + website)
 
 Para Sarah. Qué tiene que lograr la interfaz que ve la persona que va a comprar un seguro.
 No dice cómo se ve, dice qué tiene que pasarle a quien la usa. El cómo es tuyo.
 
+> ⚠️ **Nota del 23 de julio — resultado de la revisión conjunta (Sarah + Claude) de la versión que
+> mandó el equipo.** Cuatro cambios reales sobre esa versión, resto queda igual:
+> 1. **La web es rica, no paridad con WhatsApp.** El equipo propuso que para el MVP la web hiciera
+>    lo mismo que WhatsApp (mismas tarjetas, solo skin distinto). Decisión: se mantiene la versión
+>    del journey — la web tiene el simulador/comparador hiperpersonalizado completo, sin las
+>    restricciones de WhatsApp. Ver sección 3.
+> 2. **La persona por defecto vuelve a marcarse como hipótesis, no hecho.** La base cambió de 1,56M
+>    a 500K filas y la columna que definía "sin grupo familiar" ahora viene anonimizada. Ver
+>    sección 2.
+> 3. **Los colores de la sección 9 estaban desactualizados** — usaban la reconstrucción no oficial
+>    vieja en vez del material oficial real que ya tenemos.
+> 4. **Las fases del CRM (sección 0.3) no coinciden con las que propuso Samuel** en
+>    `EMULADOR_ARQUITECTURA.md`. Todavía no está en `sql/schema.sql`, así que no ha costado nada
+>    corregirlo — falta que Samuel lo confirme.
+
 ---
 
-# NOTAS
-puentes/canales son 2 principalmente (lo que ve el cliente y por donde se va a contactar con colsubsidio):
+## 0. Los dos puentes y el panel de administración
 
-la webpage (un simulador chatbot con estilo de colsubsidio que por detras funciona exactamente igual que el simulador de whatsapp), va en una seccion entera dedicada a ese chatbot (no es un boton flotante, es una seccion entera de la pagina oficial de colsubsidio), el flujo es cliente->bot aunque el sistema puede incluir contexto de cliente si viene desde otro lugar (whatsapp)
+Dos canales por donde el cliente ve y usa esto — mismo backend, mismo perfil, misma lógica de
+recomendación, distinta piel:
 
-el simulador de whatsapp (un simulador que literalmente es como si fuera whatsapp, su mismo estilo grafico) donde el cliente va a poder contactar Y SER CONTACTADO con flujo cliente->bot y bot->cliente [la idea es despues poder simular mensajes iniciales del bot hacia el cliente]; este simulador de whatsapp es proactivo, el puede contactar directamente al cliente y viceversa, aunque el objetivo principal siempre es mandar al cliente a la webpage con toda la informacion y contexto que se haya recopilado en whatsapp, un cliente puede completar el proceso end 2 end directamente en whatsapp, solo que en la webpage seria mas facil para todos
+### 0.1 Website
 
+Sección propia dentro de la página oficial de Colsubsidio (apartado de seguros), **no un botón
+flotante**. Diseño y UX propios de Colsubsidio — colores, tipografía, layout — no una copia de
+WhatsApp. Flujo cliente → bot, pero el sistema puede traer contexto de otro canal si el cliente
+llega desde WhatsApp (nada se repite).
 
-el dashboard de admin es un lugar donde el admin puede ver 2 secciones principales:
+Acá vive la experiencia completa: los tres tipos de tarjeta (sección 6) más el simulador/comparador
+hiperpersonalizado del journey — libre de las restricciones de tarjetas nativas de WhatsApp.
 
-seccion CRM: donde evidencia todos los clientes del csv o xlsx que le inyecte con su informacion cruda, otro lugar donde los clinetes ya hayan sido procesados/analizados por ia para dar un breve resumen/analisis de hhacia que direccion se puede ir el cliente, otro lugar donde pueda mostrar ya los clientes con su respectivo analisis, los demas datos, y las fases de los clientes (Prospecto [datos crudos de cliente], Análisis [analizado segun datos crudos], Cotización/negociacion [esta hablando con cliente para ver su mejor seguro], Cierre Ganado [adquiere seguro], Cierre Perdido [rechaza oferta de seguros], En Suscripción [La aseguradora evalúa el riesgo antes de emitir, este proceso se hace manual], Póliza Emitida [pago inicial registrado, este proceso ya se hace manual]) y si deben pasar a follow-manual (nuestrasolucion no alcanza para el proceso entero, pero si mas del 70%).
+### 0.2 WhatsApp (simulador)
 
-seccion registros: un lugar donde se va a poder visualizar todo lo que el clinete dijo y todo lo que el bot dijo (tanto desde el simulador de whatsapp como desde el website o como desde llamadas a futuro con sus transcripts usando ia), algo simple, tipo app de mensajes, que tenga informacion cruda del cliente obtenida del csv o xlsx o alguna db, analisis del cliente, y ahi mismo se puede ver el contexto del cliente adicional.
+Réplica visual de WhatsApp lo más fiel posible — mismo estilo gráfico, porque es por donde el
+cliente se contactaría en la vida real. A diferencia de la web, es **bidireccional y proactivo**:
+el bot puede iniciar contacto (plantilla personalizada) y el cliente puede escribir primero.
 
+El objetivo principal siempre es llevar al cliente a la web con todo el contexto ya recopilado,
+pero **el proceso completo se puede cerrar sin salir de WhatsApp** — solo que en la web es más
+fácil para todos. Restringido a las herramientas reales de WhatsApp: botones, listas, imágenes,
+links. Nada que dependa de un componente web.
+
+### 0.3 Dashboard admin
+
+Dos secciones:
+
+**CRM.** Todos los clientes del CSV/XLSX inyectado con su información cruda; los que ya tienen
+análisis de IA (resumen de hacia dónde puede ir el cliente); y la vista completa por cliente con su
+análisis, sus datos y su fase. Fases propuestas:
+
+`Prospecto` (datos crudos) → `Análisis` (analizado según datos crudos) →
+`Cotización / negociación` (conversando para encontrar su mejor seguro) →
+`Cierre ganado` (adquiere el seguro) / `Cierre perdido` (rechaza la oferta) →
+`En suscripción` (la aseguradora evalúa el riesgo antes de emitir — manual) →
+`Póliza emitida` (pago inicial registrado — manual)
+
+Con bandera de **follow-manual** cuando el sistema no alcanza a resolver el proceso completo, pero
+sí más del 70%.
+
+> ⚠️ **Pendiente:** esta secuencia de fases es distinta a la que propuso Samuel en
+> `EMULADOR_ARQUITECTURA.md` (`prospecto → contactado → necesidad_identificada → oferta_presentada →
+> en_negociacion → comprado → descartado`). Esta versión es más realista al negocio de seguros
+> porque incluye los pasos reales post-venta (suscripción, emisión). Como todavía no está escrita en
+> `sql/schema.sql`, se puede resolver con una conversación corta antes de que Samuel la comprometa.
+
+**Registros.** Todo lo que dijo el cliente y todo lo que dijo el bot, sin importar el canal de
+origen (WhatsApp, web, y a futuro llamadas transcritas con IA) — simple, tipo app de mensajes, con
+la información cruda del cliente, su análisis, y el contexto adicional a la mano.
+
+---
 
 ## 1. La única prueba que importa
 
@@ -36,34 +91,52 @@ La segunda prueba, en palabras del propio brief: **"¿yo usaría esto para compr
 
 ## 2. Quién es la persona
 
-por defecto, 20 a 35 años soltero sin hijos (segun analisis de data 1.5m registros)
+> ⚠️ La base cambió el 23 de julio: de 1,56M a 500K filas, y la columna que definía "sin grupo
+> familiar" (`SEGMENTO_GRUPO_FAMILIAR`) ahora viene anonimizada con códigos griegos — ya no se
+> puede leer del dato quién es soltero sin hijos, hay que preguntarlo en la conversación (pregunta 1
+> del discovery en `CAPA-CUALITATIVA.md`). El perfil de abajo sigue siendo la mejor hipótesis para
+> diseñar, pero es hipótesis, no un hecho medido en la base actual.
 
-**Qué sabe de seguros:** casi nada. No sabe si necesita vida, salud o accidentes. No sabe qué es un deducible ni le importa, solo quiere encontrar lo que mas le convenga.
+Del análisis de la base anterior (1,56M), el segmento más grande era **"20 a 35 años, sin grupo
+familiar", alrededor de un tercio de la base.** Coincide con el ejemplo que el brief usa para
+explicar el reto, el de "soltero sin hijos". Esa es la persona por defecto mientras no se reconfirme
+con la base nueva.
 
-**Por qué nunca ha comprado:** no sabe por dónde empezar y porque asume que va a terminar hablando con un vendedor que le va a insistir.
+**Qué sabe de seguros:** casi nada. No sabe si necesita vida, salud o accidentes. No sabe qué es un
+deducible ni le importa — solo quiere encontrar lo que más le convenga.
 
-**Qué teme al usar esto:** que le vendan algo que no necesita, que después le digan que eso no estaba cubierto.
+**Por qué nunca ha comprado:** no sabe por dónde empezar y asume que va a terminar hablando con un
+vendedor que le va a insistir.
 
-**No está comprando un seguro.** Está decidiendo proteger algo. Eso no significa que la interfaz deba ser solemne, significa que no puede sentirse como un formulario ni como una tienda.
+**Qué teme al usar esto:** que le vendan algo que no necesita, que después le digan que eso no
+estaba cubierto.
+
+**No está comprando una camiseta.** Está decidiendo proteger algo. Eso no significa que la interfaz
+deba ser solemne, significa que no puede sentirse como un formulario ni como una tienda.
 
 ---
 
-## 3. Cómo está armada la pantalla, son 2 puentes actualmente lo que ve el cliente (emulador-website)
+## 3. Cómo está armada la pantalla — dos puentes, una lógica
 
-Un **chat que ocupa el centro**, con la estructura de WhatsApp: burbujas, hilo que baja, escritura natural. La conversación es el producto, no un accesorio.
-Pero con el design de colsubsidio y sus colores y todo eso
+Un **chat que ocupa el centro**, con estructura de WhatsApp: burbujas, hilo que baja, escritura
+natural. La conversación es el producto, no un accesorio. Eso es igual en los dos puentes.
 
-el puente que conecta el sistema con el cliente mediante el simulador de whatsapp, debe tener todo el ux y design de whatsapp para simularlo al maximo (este es el lugar donde el cliente se contactaria en la vida real con el sistema, mediante whatsapp)
+Lo que cambia es cuánto se puede hacer dentro de ese chat:
 
-el puente que conecta el sistema con el cliente mediante la website si debe tener todo el ux y design propio de colsubisido, va a ser una seccion dedicada en el apartado de seguros de la pagina oficial de colsubsidio y va a tener la misma funcion y capacidad que el puente de whatsapp, solo es un puente diferente
+- **Puente WhatsApp:** restringido a las herramientas reales que WhatsApp permite — botones,
+  listas, imágenes, links, tarjetas simples. Si algo no se puede mostrar así de verdad, no va acá.
+- **Puente web:** libre. Mismo diseño de partida (chat central, estilo WhatsApp) pero con el design
+  system de Colsubsidio, y sin el techo de WhatsApp — ahí vive el simulador/comparador
+  hiperpersonalizado, con más margen de interacción en comparación y ajuste de cobertura.
 
 Dentro del chat, el agente puede mandar **tarjetas interactivas**: bloques que se tocan, no solo
-texto. Ahí viven la comparación, el ajuste de cobertura y las exclusiones.
-para el puente de whatsapp debemos tener en cuenta las tools que actualmente se pueden usar en whatsapp (bootnes, listas, imagenes, links, etc...) y para el puente de website ya puede ser personalizable al 100% la idea es que sea similar a whatsapp o si hay una idea mejor, aplicarla, pero para este mvp la idea es hacer lo mismo que hace whatsapp, documentando que se puede expandir hacia un lugar mas personalizado
+texto. Ahí viven la comparación, el ajuste de cobertura y las exclusiones (sección 6) — en los dos
+puentes, aunque en la web pueden ser más ricas.
 
-**La regla que ordena todo esto:** lo que va dentro del chat tiene que ser algo que WhatsApp
-también podría mostrar (listas, botones, tarjetas). Así el mismo agente sirve en la web y en
-WhatsApp sin rediseñar.
+**La regla que se mantiene:** la base de las tres tarjetas (sección 6) tiene que existir en su
+versión simple en WhatsApp también, para que el mismo agente sirva en los dos canales sin que uno
+se quede corto. Lo que la web agrega por encima de esa base no tiene que replicarse en WhatsApp.
+
 ---
 
 ## 4. El recorrido, momento por momento
@@ -169,15 +242,23 @@ elemento con más peso de todo el diseño después del recorrido base, y es tuyo
 
 ## 9. Marca
 
-Referencia en `Manual de Marca Colsubsidio.md` del repo del equipo. Ojo con una advertencia que el
-propio documento trae: **no es un manual oficial**, es una reconstrucción desde el logo público. No
-hay valores oficiales publicados. Sirve como guía, no como ley.
+Referencia en `Manual-de-Marca-Colsubsidio.md`, reconstruido a partir del material gráfico oficial
+real que le compartieron al equipo (paleta de colores institucional y logotipos). Valores exactos:
 
-- **Amarillo Colsubsidio** `#FFD100`, primario.
-- **Azul institucional** `#0068B3`. **Azul oscuro para texto** `#0B2A4A`. **Blanco** `#FFFFFF`.
-- **Tipografía:** Poppins para títulos, Inter para cuerpo.
+- **Amarillo Colsubsidio** `#ffd000` (Pantone 109 C), primario. Escala de tinta: 80% / 60% / 40%.
+- **Azul Colsubsidio** `#0067b1` (Pantone 2196 C). Escala de tinta: 80% / 60% / 40%.
+- **Grafito** `#575756` (Pantone Cool Gray 11 C). Escala de tinta: 60% / 40% / 20%.
+- **Blanco** `#FFFFFF`.
 - **Nunca texto claro sobre amarillo**, no se lee.
 - **Tono de marca:** institucional pero cálido. Lenguaje claro, sin tecnicismos fríos.
+
+**Tipografía: pendiente por confirmar.** El material oficial recibido no incluye guía tipográfica —
+Poppins/Inter era un supuesto de trabajo, no un dato confirmado. Usar como borrador hasta que llegue
+la guía real o el equipo decida una por defecto.
+
+**Logotipo:** solo se recibió el isotipo (amarillo, sobre fondo transparente) y el logotipo completo
+en su versión blanca/reversada (para fondos oscuros). No hay versión a color para fondos claros —
+si hace falta, hay que pedirla o construirla a partir de los colores de arriba.
 
 El tono de marca y lo que necesita este producto coinciden, así que no hay que pelear con la marca
 para lograr cercanía.
