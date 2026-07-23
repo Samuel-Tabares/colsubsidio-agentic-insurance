@@ -1,81 +1,110 @@
-# Manual de Marca — Colsubsidio
+# Manual de Marca Oficial — Colsubsidio
 
-> **Nota:** este documento es una reconstrucción independiente basada en información pública, elaborada a modo de referencia visual. Colsubsidio no tiene, a la fecha, un manual de marca oficial publicado; los colores, historia y usos aquí descritos se basan en el logo público de la marca y en fuentes abiertas, no en lineamientos internos oficiales.
-
----
-
-## 01. Sobre la marca
-
-Colsubsidio es una organización privada sin ánimo de lucro, fundada en **1957**, que hace parte del Sistema de Protección y Seguridad Social en Colombia.
-
-**Propósito de marca:** apoyar el desarrollo de las personas a través de salud, educación, recreación, vivienda y subsidios — promoviendo equidad social y cerrando brechas en el país.
-
-**Sectores que cubre:**
-- Salud
-- Educación y cultura
-- Recreación y turismo
-- Vivienda
-- Supermercados y droguerías
-- Empleo, productividad e innovación
+> Documento elaborado a partir del material gráfico oficial suministrado: paleta de colores institucional y versiones del logotipo (isotipo en amarillo y logotipo completo en blanco).
 
 ---
 
-## 02. Historia del logo
+## 1. Introducción
 
-**1963 — Símbolo original**
-Diseñado por el diseñador colombiano Dicken Castro. Marca el primer símbolo gráfico de la organización.
-
-**2006 — Rediseño del isotipo**
-Nuevo isotipo amarillo compuesto por figuras geométricas tipo tangram, diseñado por TXT Agencia Transmedia.
-
-**Actual — Vigente**
-El isotipo tangram amarillo, acompañado del logotipo Colsubsidio en blanco sobre azul institucional.
+Este manual recopila los elementos gráficos oficiales de la marca **Colsubsidio**: su paleta de colores institucional con las especificaciones técnicas exactas para reproducción en distintos medios (impresos y digitales), y las dos versiones del logotipo disponibles: el isotipo independiente y el logotipo completo en su versión reversada (blanca).
 
 ---
 
-## 03. Paleta de color
+## 2. Colores Oficiales
 
-Códigos extraídos del logo público de Colsubsidio. No existen valores HEX/Pantone oficiales publicados — esta paleta es una aproximación de referencia.
+La marca Colsubsidio se construye sobre tres colores institucionales: **Amarillo Colsubsidio**, **Azul Colsubsidio** y **Grafito**. A continuación se detallan sus valores exactos en los distintos sistemas de color (Pantone, CMYK, RGB y Hexadecimal), junto con sus respectivas escalas de tinta (porcentajes de opacidad/tono permitidos).
 
-**Color primario**
-- Amarillo Colsubsidio — `#FFD100`
+### 2.1 Amarillo Colsubsidio
 
-**Colores de soporte**
-- Azul institucional — `#0068B3`
-- Azul oscuro / texto — `#0B2A4A`
-- Blanco — `#FFFFFF`
+| Sistema | Valor |
+|---|---|
+| **Pantone** | 109 C |
+| **CMYK** | 0, 18, 100, 0 |
+| **RGB** | 255, 208, 0 |
+| **HEX** | `#ffd000` |
+
+**Escala de tintas (variaciones de tono permitidas):**
+
+| Tinta | Valor |
+|---|---|
+| 100% | `#ffd000` |
+| 80% | Amarillo Colsubsidio al 80% de intensidad |
+| 60% | Amarillo Colsubsidio al 60% de intensidad |
+| 40% | Amarillo Colsubsidio al 40% de intensidad |
+
+### 2.2 Azul Colsubsidio
+
+| Sistema | Valor |
+|---|---|
+| **Pantone** | 2196 C |
+| **CMYK** | 90, 55, 0, 0 |
+| **RGB** | 0, 103, 177 |
+| **HEX** | `#0067b1` |
+
+**Escala de tintas (variaciones de tono permitidas):**
+
+| Tinta | Valor |
+|---|---|
+| 100% | `#0067b1` |
+| 80% | Azul Colsubsidio al 80% de intensidad |
+| 60% | Azul Colsubsidio al 60% de intensidad |
+| 40% | Azul Colsubsidio al 40% de intensidad |
+
+### 2.3 Grafito
+
+| Sistema | Valor |
+|---|---|
+| **Pantone** | Cool Gray 11 C |
+| **CMYK** | 0, 0, 0, 80 |
+| **RGB** | 87, 87, 86 |
+| **HEX** | `#575756` |
+
+**Escala de tintas (variaciones de tono permitidas):**
+
+| Tinta | Valor |
+|---|---|
+| 100% | `#575756` |
+| 60% | Grafito al 60% de intensidad |
+| 40% | Grafito al 40% de intensidad |
+| 20% | Grafito al 20% de intensidad |
+
+> **Nota:** a diferencia del Amarillo y el Azul (que manejan escala de tintas en 80/60/40%), el Grafito maneja una escala distinta de 60/40/20%, tal como se especifica en el material oficial.
+
+### 2.4 Resumen rápido de la paleta
+
+| Color | Pantone | CMYK | RGB | HEX |
+|---|---|---|---|---|
+| Amarillo Colsubsidio | 109 C | 0, 18, 100, 0 | 255, 208, 0 | `#ffd000` |
+| Azul Colsubsidio | 2196 C | 90, 55, 0, 0 | 0, 103, 177 | `#0067b1` |
+| Grafito | Cool Gray 11 C | 0, 0, 0, 80 | 87, 87, 86 | `#575756` |
 
 ---
 
-## 04. Tipografía
+## 3. Logotipo
 
-Familia sans-serif limpia, moderna y accesible: **Poppins** para títulos, **Inter** para cuerpo de texto. Sin elementos decorativos, priorizando legibilidad institucional con cercanía.
+La marca cuenta con un **isotipo** (símbolo) que puede usarse de forma independiente, y con un **logotipo completo** que combina el isotipo junto con el nombre "Colsubsidio" en texto.
 
-- **Título** — Poppins 700 / 32–52pt
-- **Subtítulo** — Poppins 600 / 16–20pt
-- **Cuerpo de texto** — Inter 400–500 / 10–12pt
+### 3.1 Isotipo (símbolo)
+
+- **Descripción:** figura geométrica compuesta por planos triangulares que conforman una forma tipo flecha/"K" apuntando hacia la izquierda.
+- **Color oficial de aplicación:** Amarillo Colsubsidio (`#ffd000`).
+- **Fondo:** transparente, para permitir su aplicación sobre cualquier superficie o color de fondo.
+- **Uso:** este símbolo puede emplearse de forma independiente al logotipo completo en piezas donde ya exista suficiente reconocimiento de marca o como elemento gráfico de apoyo (favicon, ícono de app, marca de agua, elementos decorativos, etc.).
+
+### 3.2 Logotipo completo — versión blanca (reversada)
+
+- **Descripción:** combina el isotipo (símbolo de flecha) junto con el logotipo tipográfico "Colsubsidio".
+- **Color oficial de aplicación:** blanco, tanto para el símbolo como para el texto.
+- **Fondo:** transparente.
+- **Uso:** esta es la versión reversada/negativa del logotipo, diseñada específicamente para aplicarse sobre fondos oscuros o de color (por ejemplo, sobre Azul Colsubsidio o Grafito), donde la versión en color no ofrecería suficiente contraste.
+
+> **Nota:** el material suministrado no incluye la versión a color completa del logotipo (isotipo amarillo + texto en azul/grafito sobre fondo claro), la cual normalmente complementaría esta versión blanca como su contraparte para fondos claros. Si cuentas con esa pieza, puedo incorporarla a este manual.
 
 ---
 
-## 05. Tono y personalidad de marca
+## 4. Aplicación y buenas prácticas (a partir del material disponible)
 
-**Institucional, pero cálido y humano**
-La solidez de una organización nacional se comunica sin distancia ni frialdad.
-
-**Lenguaje claro e inclusivo**
-Sin tecnicismos fríos: las personas entienden lo que la marca les ofrece desde la primera lectura.
-
-**Confiable y accesible**
-Alto contraste y legibilidad priorizados en todos los canales oficiales.
-
----
-
-## 06. Usos correctos e incorrectos
-
-**✓ Correcto**
-- Isotipo y texto sobre azul institucional o blanco (alto contraste).
-- Una sola familia tipográfica por jerarquía: título y cuerpo consistentes (Poppins + Inter).
-
-**✕ Incorrecto**
-- Texto claro sobre fondo amarillo (bajo contraste, ilegible).
-- Mezclar serif, itálicas y monoespaciadas (rompe la identidad de marca).
+- El isotipo debe usarse siempre en **Amarillo Colsubsidio** (`#ffd000`) cuando se aplique de forma aislada sobre fondos claros o neutros.
+- El logotipo completo en **blanco** debe reservarse para fondos oscuros o de color (Azul Colsubsidio, Grafito, fotografías oscuras, etc.), garantizando siempre suficiente contraste y legibilidad.
+- Los tres colores institucionales (Amarillo, Azul y Grafito) y sus respectivas escalas de tintas son los únicos valores autorizados para la aplicación cromática de la marca; no deben usarse variaciones de color fuera de esta paleta ni de sus porcentajes de tinta especificados.
+- Ambos archivos de logo (isotipo y logotipo completo) se manejan sobre **fondo transparente**, lo cual permite su uso flexible en distintas piezas sin generar recuadros o fondos no deseados.
