@@ -1,11 +1,17 @@
-"""ETL: normaliza Usos_Productos_Afiliados_SIN_ID.csv al modelo de datos acordado.
+"""ETL: normaliza Usos_Productos_Afiliados_SIN_ID.xlsx al modelo de datos acordado.
 
 Uso:
     python scripts/etl_afiliados.py
 
-Lee el CSV crudo (separador ';', BOM utf-8-sig) y escribe:
+Lee el xlsx crudo (hoja "in", streaming vía openpyxl read_only) y escribe:
     output/afiliados_clean.csv   -> datos normalizados, listos para cargar a DB
     output/etl_report.txt        -> conteo de filas, valores inválidos, duplicados de SERIE
+
+Nota: a partir de esta versión del dataset, CATEGORIA, SEGMENTO_GRUPO_FAMILIAR,
+SEGMENTO_POBLACIONAL y PIRAMIDE_NUEVA vienen codificadas como tokens griegos opacos
+(SIGMA, PI, LAMBDA, ...) sin leyenda/codebook disponible. Por decisión del equipo se
+tratan como los valores de referencia reales (no se intenta remapearlos a las
+etiquetas de texto que traía el dataset anterior).
 """
 
 from __future__ import annotations
@@ -13,9 +19,30 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-RAW_PATH = Path("Usos_Productos_Afiliados_SIN_ID.csv")
+import openpyxl
+
+RAW_PATH = Path("Usos_Productos_Afiliados_SIN_ID.xlsx")
+RAW_SHEET = "in"
 OUT_PATH = Path("output/afiliados_clean.csv")
 REPORT_PATH = Path("output/etl_report.txt")
+
+HEADER = [
+    "SERIE",
+    "GENERO",
+    "RANGO_EDAD",
+    "RANGO_SALARIAL",
+    "CATEGORIA",
+    "SEGMENTO_GRUPO_FAMILIAR",
+    "SEGMENTO_POBLACIONAL",
+    "PIRAMIDE_NUEVA",
+    "EMPRESA_FOCO",
+    "CIUDAD_AFILIADO",
+    "HOTELES",
+    "PISCILAGO",
+    "DROGUERIA",
+    "AGENCIAS",
+    "VIVIENDA",
+]
 
 GENERO_VALUES = {"F", "M"}
 RANGO_EDAD_VALUES = {
@@ -25,42 +52,44 @@ RANGO_EDAD_VALUES = {
     "46 a 55 años",
     "Mayor de 55 años",
 }
-CATEGORIA_INGRESO_VALUES = {"A", "B", "C", "D"}
-SEGMENTO_POBLACIONAL_VALUES = {"Alto", "Básico", "Joven", "Medio"}
-
-SEGMENTO_GRUPO_FAMILIAR_MAP = {
-    "AFILLIADO SIN GRUPO_FAMILIAR": "AFILIADO SIN GRUPO FAMILIAR",
-    "FAMILIA MONOPARENTAL": "FAMILIA MONOPARENTAL",
-    "FAMILIA MONOPARENTAL AMPLIADA": "FAMILIA MONOPARENTAL AMPLIADA",
-    "FAMILIA NUCLEAR AMPLIADA": "FAMILIA NUCLEAR AMPLIADA",
-    "FAMILIA NUCLEAR INTEGRAL": "FAMILIA NUCLEAR INTEGRAL",
-    "PAREJA CONYUGAL": "PAREJA CONYUGAL",
+RANGO_SALARIAL_VALUES = {
+    "Menor al SMLV",
+    "Menor a 2 SMLV",
+    "Entre 1 y 1.5 SMLV",
+    "Entre 1.5 y 2 SMLV",
+    "Entre 2 y 2.5 SMLV",
+    "Entre 2 y 4 SMLV",
+    "Entre 2.5 y 3 SMLV",
+    "Entre 3 y 4 SMLV",
+    "Entre 4 y 6 SMLV",
+    "Entre 4 y 8 SMLV",
+    "Entre 6 y 8 SMLV",
+    "Entre 8 y 10 SMLV",
+    "Entre 8 y 19 SMLV",
+    "Entre 10 y 20 SMLV",
+    "Entre 20 y 30 SMLV",
+    "Mayor a 30 SMLV",
 }
-
-PIRAMIDE_EMPRESA_MAP = {
-    "1 Grandes": "1 Grandes",
-    "1. Grandes": "1 Grandes",  # typo en la fuente, misma categoría
-    "2 Medianas": "2 Medianas",
-    "3 Empresarial Top": "3 Empresarial Top",
-    "4 Empresarial Estandar": "4 Empresarial Estandar",
-    "5 Micro Transaccional": "5 Micro Transaccional",
-    "5 Micro Transaccional Colsubsidio": "5 Micro Transaccional Colsubsidio",
-    "6.1 Facultativo": "6.1 Facultativo",
-    "6.2 Independiente": "6.2 Independiente",
-    "6.3 Pensionado": "6.3 Pensionado",
+# Tokens opacos (sin codebook): se validan por pertenencia al conjunto observado
+# en el dataset completo, no por significado.
+CATEGORIA_VALUES = {"SIGMA", "PI", "ZETA", "MU"}
+SEGMENTO_GRUPO_FAMILIAR_VALUES = {"LAMBDA", "RHO", "EPSILON", "IOTA", "CHI", "THETA", "PI"}
+SEGMENTO_POBLACIONAL_VALUES = {"TAU", "PI", "ETA", "OMEGA", "XI"}
+PIRAMIDE_EMPRESA_VALUES = {
+    "ETA", "XI", "UPSILON", "DELTA", "BETA", "OMEGA", "KAPPA", "LAMBDA", "OMICRON", "PSI",
 }
+EMPRESA_ID_VALUES = {"EMP_000001", "EMP_000002"}
 
 OUT_FIELDS = [
     "serie",
-    "nombre_completo",
     "genero",
     "rango_edad",
-    "categoria_ingreso",
+    "rango_salarial",
+    "categoria",
     "segmento_grupo_familiar",
     "segmento_poblacional",
     "piramide_empresa",
-    "empresa_asociada",
-    "afiliado_al_dia",
+    "empresa_id",
     "ciudad",
     "compra_hoteles",
     "compra_piscinas_recreacion",
@@ -70,63 +99,48 @@ OUT_FIELDS = [
 ]
 
 
-def to_bool_si_no(value: str) -> bool:
-    return value.strip().upper() == "SI"
+def to_bool_si_no(value: str | None) -> bool:
+    return bool(value) and value.strip().upper() == "SI"
 
 
-def clean(value: str) -> str | None:
-    value = value.strip()
+def clean(value: str | None) -> str | None:
+    if value is None:
+        return None
+    value = str(value).strip()
     return value if value else None
 
 
-def transform_row(row: dict[str, str], line_no: int, warnings: list[str]) -> dict:
-    genero = clean(row["GENERO"])
-    if genero not in GENERO_VALUES:
-        warnings.append(f"línea {line_no}: GENERO inválido -> {genero!r}")
-        genero = None
+def validated(value: str | None, allowed: set[str], field: str, line_no: int, warnings: list[str]) -> str | None:
+    value = clean(value)
+    if value is not None and value not in allowed:
+        warnings.append(f"línea {line_no}: {field} inválido -> {value!r}")
+        return None
+    return value
 
-    rango_edad = clean(row["RANGO_EDAD"])
-    if rango_edad is not None and rango_edad not in RANGO_EDAD_VALUES:
-        warnings.append(f"línea {line_no}: RANGO_EDAD inválido -> {rango_edad!r}")
-        rango_edad = None
 
-    categoria_ingreso = clean(row["CATEGORIA"])
-    if categoria_ingreso is not None and categoria_ingreso not in CATEGORIA_INGRESO_VALUES:
-        warnings.append(f"línea {line_no}: CATEGORIA inválida -> {categoria_ingreso!r}")
-        categoria_ingreso = None
-
-    segmento_grupo_familiar_raw = clean(row["SEGMENTO_GRUPO_FAMILIAR"])
-    segmento_grupo_familiar = (
-        SEGMENTO_GRUPO_FAMILIAR_MAP.get(segmento_grupo_familiar_raw)
-        if segmento_grupo_familiar_raw
-        else None
-    )
-    if segmento_grupo_familiar_raw and segmento_grupo_familiar is None:
-        warnings.append(
-            f"línea {line_no}: SEGMENTO_GRUPO_FAMILIAR desconocido -> {segmento_grupo_familiar_raw!r}"
-        )
-
-    segmento_poblacional = clean(row["SEGMENTO_POBLACIONAL"])
-    if segmento_poblacional is not None and segmento_poblacional not in SEGMENTO_POBLACIONAL_VALUES:
-        warnings.append(f"línea {line_no}: SEGMENTO_POBLACIONAL inválido -> {segmento_poblacional!r}")
-        segmento_poblacional = None
-
-    piramide_raw = clean(row["PIRAMIDE_NUEVA"])
-    piramide_empresa = PIRAMIDE_EMPRESA_MAP.get(piramide_raw) if piramide_raw else None
-    if piramide_raw and piramide_empresa is None:
-        warnings.append(f"línea {line_no}: PIRAMIDE_NUEVA desconocida -> {piramide_raw!r}")
-
+def transform_row(row: dict[str, object], line_no: int, warnings: list[str]) -> dict:
     return {
-        "serie": row["SERIE"].strip(),
-        "nombre_completo": clean(row["NOMBRE_COMPLETO"]),
-        "genero": genero,
-        "rango_edad": rango_edad,
-        "categoria_ingreso": categoria_ingreso,
-        "segmento_grupo_familiar": segmento_grupo_familiar,
-        "segmento_poblacional": segmento_poblacional,
-        "piramide_empresa": piramide_empresa,
-        "empresa_asociada": row["EMPRESA_FOCO"].strip().upper() == "X",
-        "afiliado_al_dia": row["ESTADOAFILIADO"].strip().upper() == "AL DIA",
+        "serie": str(row["SERIE"]).strip(),
+        "genero": validated(row["GENERO"], GENERO_VALUES, "GENERO", line_no, warnings),
+        "rango_edad": validated(row["RANGO_EDAD"], RANGO_EDAD_VALUES, "RANGO_EDAD", line_no, warnings),
+        "rango_salarial": validated(
+            row["RANGO_SALARIAL"], RANGO_SALARIAL_VALUES, "RANGO_SALARIAL", line_no, warnings
+        ),
+        "categoria": validated(row["CATEGORIA"], CATEGORIA_VALUES, "CATEGORIA", line_no, warnings),
+        "segmento_grupo_familiar": validated(
+            row["SEGMENTO_GRUPO_FAMILIAR"],
+            SEGMENTO_GRUPO_FAMILIAR_VALUES,
+            "SEGMENTO_GRUPO_FAMILIAR",
+            line_no,
+            warnings,
+        ),
+        "segmento_poblacional": validated(
+            row["SEGMENTO_POBLACIONAL"], SEGMENTO_POBLACIONAL_VALUES, "SEGMENTO_POBLACIONAL", line_no, warnings
+        ),
+        "piramide_empresa": validated(
+            row["PIRAMIDE_NUEVA"], PIRAMIDE_EMPRESA_VALUES, "PIRAMIDE_NUEVA", line_no, warnings
+        ),
+        "empresa_id": validated(row["EMPRESA_FOCO"], EMPRESA_ID_VALUES, "EMPRESA_FOCO", line_no, warnings),
         "ciudad": clean(row["CIUDAD_AFILIADO"]),
         "compra_hoteles": to_bool_si_no(row["HOTELES"]),
         "compra_piscinas_recreacion": to_bool_si_no(row["PISCILAGO"]),
@@ -143,17 +157,17 @@ def main() -> None:
     duplicate_series = 0
     row_count = 0
 
-    with (
-        RAW_PATH.open("r", encoding="utf-8-sig", newline="") as fin,
-        OUT_PATH.open("w", encoding="utf-8", newline="") as fout,
-    ):
-        reader = csv.DictReader(fin, delimiter=";")
+    wb = openpyxl.load_workbook(RAW_PATH, read_only=True)
+    ws = wb[RAW_SHEET]
+
+    with OUT_PATH.open("w", encoding="utf-8", newline="") as fout:
         writer = csv.DictWriter(fout, fieldnames=OUT_FIELDS)
         writer.writeheader()
 
-        for line_no, row in enumerate(reader, start=2):
+        for line_no, values in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            row = dict(zip(HEADER, values))
             row_count += 1
-            serie = row["SERIE"].strip()
+            serie = str(row["SERIE"]).strip()
             if serie in seen_series:
                 duplicate_series += 1
                 warnings.append(f"línea {line_no}: SERIE duplicada -> {serie!r}")
@@ -162,6 +176,8 @@ def main() -> None:
 
             clean_row = transform_row(row, line_no, warnings)
             writer.writerow(clean_row)
+
+    wb.close()
 
     with REPORT_PATH.open("w", encoding="utf-8") as report:
         report.write(f"Filas procesadas: {row_count}\n")
