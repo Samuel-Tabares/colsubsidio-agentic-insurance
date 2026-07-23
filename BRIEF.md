@@ -299,8 +299,10 @@ Los caminos 2 y 3 se combinan y funcionan aunque nunca llegue el diccionario.
 
 - `DROGUERIA` → salud, asistencias médicas. Ya hay gasto de bolsillo recurrente en salud.
 - `HOTELES` o `AGENCIAS` → asistencia médica en viajes.
-- `PISCILAGO` → accidentes personales. Vida activa, familia en recreación.
 - `VIVIENDA` → hogar, contenido y arrendamiento.
+- ⚠️ `PISCILAGO` ya NO sirve: en la base nueva viene 100% en NO (columna muerta, sin señal).
+  Era nuestra señal de accidentes personales; hay que buscar esa familia por otra vía (edad,
+  ingreso, o la conversación).
 - `RANGO_EDAD` → modula la familia y el monto.
 - `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
   ofrecerle a esa persona. Es la variable nueva y es la mejor que tenemos para no recomendar algo
@@ -313,10 +315,23 @@ Los caminos 2 y 3 se combinan y funcionan aunque nunca llegue el diccionario.
 - `PIRAMIDE_NUEVA` igual a independiente → accidentes y salud. Igual problema.
 
 Esas dos eran señales fuertes. La de familia era la de mayor peso de todas, porque define el eje
-del ejemplo de gemelos del brief. **Se recuperan por dos vías:** con el diccionario de códigos si
-la organización lo entrega, o preguntándolas en la conversación, que es lo que ya hacen las
-preguntas 1 y 3 del discovery ("¿quién depende económicamente de ti hoy?" y "si no pudieras
-trabajar por un mes, ¿de qué vivirías?").
+del ejemplo de gemelos del brief.
+
+**El diccionario de códigos NO va a llegar.** Colsubsidio confirmó el 23 de julio que los tokens
+griegos son intencionales, para no divulgar su clasificación interna, y que no entregarán el mapeo.
+Es final, no un pendiente. Pero **sí dieron el significado conceptual de cada campo**, lo que
+permite enmarcar en general sin saber qué token es cuál:
+- `CATEGORIA` = categoría dentro del sistema de subsidio familiar (eje de ingreso).
+- `SEGMENTO_GRUPO_FAMILIAR` = composición del hogar.
+- `SEGMENTO_POBLACIONAL` = segmentación por ingreso, edad y PAC.
+- `PIRAMIDE_NUEVA` = tier de la empresa aportante.
+
+Entonces la señal de familia se recupera por tres vías combinadas: el encuadre conceptual de arriba
+("tu segmento de composición familiar"), la caracterización de cada token por su comportamiento
+medido (ver `ANALISIS-PROPENSION.md`), y sobre todo **preguntándola en la conversación**, que es lo
+que ya hacen las preguntas 1 y 3 del discovery ("¿quién depende económicamente de ti hoy?" y "si no
+pudieras trabajar por un mes, ¿de qué vivirías?"). Samuel además dejó un decode direccional por
+frecuencia en `CLAUDE.md`, útil como pista, nunca como etiqueta en producto.
 
 Vale la pena notar el efecto secundario: **la anonimización sube el peso de la conversación frente
 al dato**, que es exactamente la arquitectura que ya habíamos elegido. Los datos siguen definiendo
@@ -327,20 +342,17 @@ el mapa, solo que ahora el mapa tiene menos etiquetas y la conversación aporta 
 Nada de lo que sigue se sabe todavía. Son las preguntas que el perfilado tiene que responder antes
 de escribir una sola regla. Detalle e instrucciones en `ANALISIS-PROPENSION.md`.
 
-1. **Cuántos códigos distintos tiene cada columna griega y cómo se reparten.** Si
-   `SEGMENTO_GRUPO_FAMILIAR` tiene cinco códigos y sus tamaños se parecen a los de las cinco
-   categorías legibles de la base anterior, es una pista fuerte, aunque no una prueba.
-2. **Qué comportamiento observable caracteriza a cada código.** Para cada uno: distribución de edad,
-   de rango salarial, y tasa de cada marca de consumo. Eso permite describirlo por lo que hace sin
-   afirmar qué es, que es el camino 3 de arriba.
-3. **Si el consumo sigue siendo señal independiente del perfil.** Se vuelve a medir la asociación.
+1. **Qué comportamiento observable caracteriza a cada código griego.** Para cada uno: distribución
+   de edad, de rango salarial, y tasa de cada marca de consumo. Eso permite describirlo por lo que
+   hace sin afirmar qué es. Es el trabajo central del frente de datos.
+2. **Si el consumo sigue siendo señal independiente del perfil.** Se vuelve a medir la asociación.
    El resultado cambia si las reglas suman o se pisan.
-4. **Cuál es el segmento más grande** con los campos legibles, empezando por rango de edad. De ahí
+3. **Cuál es el segmento más grande** con los campos legibles, empezando por rango de edad. De ahí
    sale la persona por defecto del demo.
-5. **Cuánto vacío hay en `CIUDAD_AFILIADO`** ahora que viene más poblada, y en el resto.
-6. **Cuánto se solapan `PIRAMIDE_NUEVA` y `EMPRESA_FOCO`.** En la base anterior eran casi la misma
-   cosa (V = 0,84), y usar las dos como señales separadas inflaba el score contando la misma
-   evidencia dos veces.
+4. **`CIUDAD_AFILIADO` viene vacía en el 58%** (ya medido por Samuel). No sirve como segmentación
+   primaria sin tratar ese hueco.
+5. **`EMPRESA_FOCO` tiene solo 2 valores** (`EMP_000001` 82%, `EMP_000002` 18%) y está muy correlado
+   con `PIRAMIDE_NUEVA`. Usar solo uno de los dos, no ambos como señales separadas.
 
 ## El catálogo
 
@@ -365,6 +377,45 @@ Principio de arquitectura: **los datos definen el mapa, la conversación ubica a
 La superficie es un hilo estilo WhatsApp, pero con tarjetas interactivas dentro del chat: el
 comparador tiene pestañas por aseguradora, la cobertura tiene slider, las exclusiones se
 despliegan. El usuario nunca sale del chat.
+
+## La idea central: un cerebro, dos canales, un perfil compartido
+
+El sistema tiene **un solo cerebro** (el agente + RAG + `recomendar()`) que no sabe en qué canal
+está. Ese cerebro atiende **dos canales**: un WhatsApp simulado y una web. Y hay **un solo perfil
+por usuario** en la base, que los dos canales leen y escriben.
+
+Por eso el recorrido es de punta a punta en cualquiera de los dos: el usuario puede terminar en
+WhatsApp si quiere, o saltar a la web y encontrar su contexto ya cargado.
+
+**El handoff es real, no falso.** El link de WhatsApp abre la web, y el chatbot web llama una tool
+que trae el perfil por su `id`. Y al revés. No son datos de prueba precargados: es el mismo registro
+en la misma base. Es lo que hace defendible el "e2e multicanal" ante el jurado.
+
+**Reparto por canal:**
+- **WhatsApp** es la puerta proactiva: oferta (simulada), precalificación de 2-3 preguntas, y
+  notificación de estado y confirmación. Es donde nace el "hiperpersonalizado", porque solo un canal
+  con push puede iniciar contacto.
+- **Web** es la superficie rica: simulación, comparación, ajuste de coberturas, decisión y cierre.
+
+**El camino de la demo es la web** (el jurado la recorre completa). En WhatsApp se muestra la
+puerta, la precalificación, el handoff, y que se **puede** cerrar ahí con un caso corto, sin
+duplicar todo el flujo. Eso cumple el e2e en ambos canales sin construir dos veces lo mismo.
+
+**El cierre** es aceptación, confirmación y resumen, entregado como mensaje en el canal.
+
+### Qué queda fuera, y por qué
+
+1. **WhatsApp real** (plantillas de Meta, ventana de 24h, opt-in): simulado. Fuera por infra y
+   porque el jurado tiene que recorrerlo solo; un WhatsApp real depende de su celular y de Meta.
+2. **Sincronización en tiempo real bot↔web** (push entre canales): no se construye. El handoff es
+   estado compartido al cargar, no sync en vivo. Alcanza para la demo y sigue siendo real.
+3. **Documentos con validez legal, suscripción real, decisión de aseguradora:** fuera por el brief.
+   La "decisión" del flujo es la del usuario de aceptar, no una suscripción real.
+4. **Pago y firma electrónica:** excluidos por el brief.
+5. **PDF de póliza o certificado:** no ahora. A lo sumo un PDF de resumen, y eso va al roadmap. El
+   cierre entrega el resumen como mensaje, no como documento.
+6. **Login:** cold start con un `id` generado; el perfil se llavea por ese `id`. Sin login.
+7. **Voz:** descartada.
 
 ## Las 3 reglas que no se rompen
 
@@ -469,14 +520,23 @@ Y todo eso sin que nadie del equipo abra la boca.
    necesito".
 4. **¿Dónde vive en producción?** WhatsApp como canal, la web de Colsubsidio como entrada fría.
 
-## Quién decide qué
+## Roles (reparto vigente, 23 de julio)
 
-- **Flujo y experiencia:** Sarah. Es dueña del gate más duro, su palabra manda.
-- **Reglas de seguros y qué se recomienda:** Jhon. Es el único con el dominio.
-- **El agente, su orquestación y el análisis de propensión:** Luis.
-- **Base de clientes, backend y despliegue:** Samuel.
-- **Si algo entra o no al alcance:** este documento y `PLAN-CONSTRUCCION.md`. Si no está resuelto
-  ahí, lo decide Jhon en el momento, sin reunión.
+- **Jhon — el cerebro y el RAG.** Scrape del catálogo → tabla + RAG en Supabase. El agente
+  conversacional (system prompt, discovery, `recomendar(perfil)`). El cerebro es único y lo llaman
+  los dos canales. Es el único con dominio de seguros, así que las reglas de negocio son suyas.
+- **Samuel — full stack de la superficie.** Levanta el open source (Vocero CRM). Construye las 3
+  vistas sobre el diseño de Sarah (app de administración con dos secciones, simulador de WhatsApp,
+  simulador de web) y el backend que conecta los canales al cerebro, incluida la base de clientes
+  que hace posible el handoff.
+- **Sarah — experiencia y confianza.** Diseña las 3 vistas en Claude Design (referencia exacta de
+  cómo se ve y se comporta cada una). No programa el frontend; lo implementa Samuel. Puede ajustar
+  detalles de UX sobre el código montado. Marca, explicabilidad, pitch. Dueña del gate más duro
+  (autogestionado), su palabra manda en flujo.
+- **Luis — análisis de propensión.** Produce `reglas.json` desde la base, que alimenta el cerebro.
+
+**Si algo entra o no al alcance:** este documento y `PLAN-CONSTRUCCION.md`. Si no está resuelto ahí,
+lo decide Jhon en el momento, sin reunión.
 
 ## Por qué la base estructurada es el moat, no el agente
 
@@ -551,24 +611,25 @@ casi gratis del análisis que ya existe.
 
 ## Lo que falta definir
 
-**Los 4 contratos que bloquean el trabajo en paralelo** (preguntas abiertas de
-`EMULADOR_ARQUITECTURA.md`):
-1. Luis a Jhon: endpoint, formato de query y respuesta del RAG.
-2. Luis a Samuel: cómo se notifica un cambio en `perfil_crudo`.
-3. Dónde vive `recomendar(perfil)` y qué devuelve.
-4. Quién mueve `estado_crm.fase` y en qué evento.
+**Los 4 contratos que bloquean el trabajo en paralelo** (ver Fase 0 de `PLAN-CONSTRUCCION.md`):
+1. Cerebro ↔ perfil: cómo lee y escribe el cerebro el perfil por `id`.
+2. Canales ↔ cerebro: cómo cada canal invoca al cerebro con el `id`.
+3. `recomendar(perfil)`: qué recibe y qué devuelve, y la forma de `reglas.json`.
+4. Handoff: cómo el link de WhatsApp lleva el `id` a la web.
 
-**Sarah:** el flujo conversacional exacto, cómo se ven las tres tarjetas, cómo se ve la razón en
-pantalla, y cómo se baja a diseño el momento de gemelos interactivo.
+**Sarah:** el flujo conversacional exacto, cómo se ven las tres vistas y las tarjetas, y cómo se
+baja a diseño el momento de gemelos interactivo.
 
-**Luis:** el harness del agente y si mantiene el mecanismo de hash y rehash del análisis. Nota: con
-un puñado de conversaciones en un demo, ese cache cuesta depuración y no compra nada que el jurado
-vea. Sugerencia de recalcular siempre y dejar el hash documentado como ruta de escalado.
+**Jhon:** las reglas de familia con su justificación, el flujo del cerebro, y qué familias se
+priorizan en el demo.
 
-**Jhon:** las reglas de familia con su justificación, y qué familias se priorizan en el demo.
+**Luis:** la caracterización de los códigos griegos por comportamiento y las reglas de propensión.
+Nota sobre el hash/rehash del análisis de `EMULADOR_ARQUITECTURA.md`: con un puñado de
+conversaciones en un demo, ese cache cuesta depuración y no compra nada que el jurado vea.
+Sugerencia de recalcular siempre y dejar el hash documentado como ruta de escalado.
 
-**Samuel:** si el deploy va a Vercel con Supabase como Postgres (a verificar que el SSE de la
-bandeja aguante los límites de duración de función) o a un VPS con Docker.
+**Samuel:** el scaffold de las 3 vistas, los canales, y si el deploy va a Vercel con Supabase como
+Postgres (a verificar que el SSE de la bandeja aguante los límites de función) o a un VPS con Docker.
 
 ## Próximo paso
 

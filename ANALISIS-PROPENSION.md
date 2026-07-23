@@ -110,16 +110,28 @@ Nuestro mapeo decía "familia monoparental sugiere vida, porque un solo ingreso 
 Con `LAMBDA` en vez de la etiqueta, ese razonamiento no se puede escribir. Y era la señal de mayor
 peso, porque define el eje del ejemplo de gemelos del brief.
 
-### Los tres caminos, en orden
+### El diccionario NO va a llegar (confirmado)
 
-**1. Pedir el diccionario de códigos a la organización.** Gratis, un mensaje, y si lo entregan
-vuelve todo lo anterior. **Hacerlo antes de empezar a analizar.** Jhon o quien tenga el canal.
+Colsubsidio confirmó el 23 de julio que los tokens griegos son **intencionales** y que **no
+entregarán el mapeo** token→categoría. Sus palabras: existen "para proteger datos y clasificaciones
+internas... sin divulgar la clasificación original". **Es final, no un pendiente.** No lo pidas otra
+vez.
 
-**2. Construir las reglas solo sobre lo legible.** `RANGO_EDAD`, `RANGO_SALARIAL`, `GENERO`,
-`CIUDAD_AFILIADO` y las cinco marcas. Alcanza para recomendar y es completamente explicable.
-Es el piso garantizado: funciona aunque nunca llegue el diccionario.
+**Pero sí dieron el significado conceptual de cada campo**, lo que permite enmarcar en general:
+- `CATEGORIA` = categoría dentro del sistema de subsidio familiar (eje de ingreso; coincide con
+  `RANGO_SALARIAL`).
+- `SEGMENTO_GRUPO_FAMILIAR` = composición del hogar.
+- `SEGMENTO_POBLACIONAL` = segmentación por ingreso, edad y PAC.
+- `PIRAMIDE_NUEVA` = tier de la empresa aportante.
 
-**3. Caracterizar cada código por su comportamiento observable, sin afirmar qué significa.**
+Así una regla puede decir "por tu segmento de composición familiar" sin saber qué token es cuál.
+
+### Los dos caminos que sí construimos
+
+**1. Reglas sobre lo legible.** `RANGO_EDAD`, `RANGO_SALARIAL`, `GENERO`, `CIUDAD_AFILIADO` y las
+cinco marcas. Alcanza para recomendar y es completamente explicable. Es el piso garantizado.
+
+**2. Caracterizar cada código por su comportamiento observable, sin afirmar qué significa.**
 Este es el trabajo interesante y el que más valor agrega.
 
 Para cada código de cada columna griega, medir contra los campos legibles:
@@ -136,12 +148,13 @@ Y es defendible ante el jurado justamente porque no inventa la etiqueta. Si preg
 `LAMBDA`, la respuesta correcta es "no lo sabemos, la base viene anonimizada, y por eso lo
 describimos por su comportamiento medido".
 
-### Una pista tentadora que NO es prueba
+### El decode direccional de Samuel (pista, no prueba)
 
-Si `SEGMENTO_GRUPO_FAMILIAR` tiene cinco códigos y la base anterior tenía cinco categorías legibles
-con tamaños parecidos, es tentador alinearlas por frecuencia. **Se puede explorar, no se puede
-afirmar.** Si se usa, va marcado como hipótesis en el documento de lógica, nunca como hecho en la
-pantalla del usuario.
+Samuel ya alineó los tokens con las categorías de la base anterior por frecuencia: `LAMBDA` ≈ sin
+grupo familiar (57%), `RHO` ≈ monoparental (24%), `EPSILON` ≈ familia nuclear (9%), etc. Está en el
+`CLAUDE.md` del repo, documentado como inferencia direccional. **Es una pista para orientarse, no
+un hecho.** Colsubsidio confirmó que el codebook real no llega, así que esto **nunca** se usa para
+etiquetar en la pantalla del usuario. Sirve para priorizar qué medir, no para afirmar.
 
 ---
 
@@ -152,10 +165,12 @@ agencia de seguros de SURA), no de los datos. **Son hipótesis, y el trabajo es 
 corregirlas o descartarlas.**
 
 **Vigentes, porque las marcas no se codificaron:**
-- `DROGUERIA` = SI → salud y asistencias médicas. Gasto de bolsillo recurrente en salud.
+- `DROGUERIA` = SI → salud y asistencias médicas. Gasto de bolsillo recurrente en salud (17,65%
+  de la base).
 - `HOTELES` o `AGENCIAS` = SI → asistencia médica en viajes.
-- `PISCILAGO` = SI → accidentes personales. Vida activa, familia en recreación.
 - `VIVIENDA` = SI → hogar, contenido y arrendamiento.
+- ⚠️ `PISCILAGO` está **muerta**: 100% NO en toda la base nueva. Era la señal de accidentes;
+  esa familia hay que buscarla por edad, ingreso o conversación.
 - `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
   ofrecer. Es la variable nueva y es la más valiosa que entró.
 - `RANGO_EDAD` → modula familia y monto.
@@ -179,7 +194,10 @@ sigue siendo válido.
 
 ## 5. Los pasos
 
-**Paso 0. Pedir el diccionario de códigos.** Antes de todo lo demás. Si llega, cambia el alcance.
+**Paso 0.** No hay diccionario de códigos y no lo va a haber (Colsubsidio lo confirmó). Se arranca
+directo con los campos legibles y la caracterización de los tokens por comportamiento. Nota: gran
+parte del ETL y el perfilado ya los corrió Samuel; revisar `scripts/` y `output/` del repo antes
+de rehacer nada.
 
 **Paso 1. Ingesta.** DuckDB, `delim=';'`, `all_varchar=true`. Selección explícita de columnas, sin
 `SELECT *`. Verificar el encoding: si el archivo trae BOM, la primera columna se lee como `﻿SERIE`

@@ -1,104 +1,118 @@
 # Plan de construcción — fases, dueños y entregables
 
-**Actualizado:** 2026-07-23, tras el cambio de base de la organización.
+**Actualizado:** 2026-07-23, con los roles nuevos y la arquitectura de dos canales.
 **Contexto del reto:** `BRIEF.md`. Si algo acá lo contradice, gana el brief.
 
 Cada fase dice: qué se hace, quién lo hace, dónde queda la salida, de qué depende, y cuándo se
 considera terminada. Si no se puede marcar el criterio de terminado, la fase sigue abierta.
 
 **Tiempo real:** el domingo está prácticamente muerto. Quedan jueves, viernes y sábado. Unos 2,5
-días. Por eso el orden importa más que la ambición.
+días. Por eso el orden importa más que la ambición: algo pequeño que funcione le gana a una idea
+enorme a medias.
+
+---
+
+## La arquitectura, en un dibujo
+
+Un cerebro, dos canales, un perfil compartido.
+
+```
+        WhatsApp (simulado)          Web
+        oferta + precalifica         simulación, comparación,
+        + confirmación               ajuste, decisión, cierre
+              │                            │
+              └──────────┬─────────────────┘
+                         ▼
+              CEREBRO (agente + RAG + recomendar)   ← Jhon
+                         │
+                         ▼
+              PERFIL COMPARTIDO (tabla clientes)    ← Samuel
+              un id por usuario, los dos canales
+              leen y escriben aquí
+```
+
+- **El cerebro es único** y no sabe en qué canal está.
+- **El handoff es real:** el link de WhatsApp abre la web y el chatbot trae el perfil por `id`. No
+  son datos falsos, es el mismo registro.
+- **Camino de la demo: la web.** WhatsApp muestra la puerta, la precalificación y el handoff, y que
+  se puede cerrar ahí con un caso corto. No se duplica el flujo completo en los dos canales.
+
+Detalle y "qué queda fuera y por qué" en `BRIEF.md`, Parte 4.
+
+---
+
+## Roles
+
+- **Jhon** — el cerebro y el RAG. Scrape del catálogo, RAG en Supabase, agente, `recomendar()`.
+- **Samuel** — full stack: levanta Vocero, las 3 vistas sobre el diseño de Sarah, los canales y el
+  backend, incluida la base de clientes que hace posible el handoff.
+- **Sarah** — diseña las 3 vistas en Claude Design; no programa. Marca, explicabilidad, pitch.
+- **Luis** — análisis de propensión; produce `reglas.json`.
 
 ---
 
 ## Mapa de dependencias
 
 ```
-FASE 0 (desbloqueo)
-   │
-   ├──► FASE 1 (datos) ────────┐
-   │                            ├──► FASE 3 (motor) ──► FASE 4 (vista cliente) ──► FASE 6
-   └──► FASE 2 (catálogo) ─────┘                                │
-                                                                 │
-        FASE 5 (vista admin) ───────────────────────────────────┘
+FASE 1 (datos, Luis) ──────────┐
+                                ├──► FASE 3 (cerebro, Jhon) ──► FASE 4 (canales+vista, Samuel) ──► FASE 5
+FASE 2 (catálogo+RAG, Jhon) ───┘                                        ▲
+                                                                        │
+        FASE 0 (contratos) ── desbloquea todo ──────────────────────────┘
 ```
 
-Las fases 1 y 2 corren **en paralelo** y no se bloquean entre sí. La 5 tampoco depende de las
-demás: Vocero ya funciona, se puede adaptar desde el primer día.
+Las fases 1 y 2 corren **en paralelo**. Sarah diseña en paralelo desde el día 1 (no depende de datos).
 
 ---
 
-## FASE 0 — Desbloqueo
+## FASE 0 — Congelar los contratos
 
-**Dueño:** Jhon.
-**Depende de:** nada. Es lo primero.
-**Duración estimada:** una hora.
+**Dueño:** todos, coordina Jhon.
+**Depende de:** nada. Es lo primero, antes de escribir código.
 
-### 0.1 Pedir el diccionario de códigos a la organización
+Sin esto nadie trabaja en paralelo sin pisarse. Salen de `EMULADOR_ARQUITECTURA.md`.
 
-La base nueva trae cuatro columnas anonimizadas con letras griegas (`CATEGORIA`,
-`SEGMENTO_GRUPO_FAMILIAR`, `SEGMENTO_POBLACIONAL`, `PIRAMIDE_NUEVA`). Sin diccionario no sabemos
-qué significa `LAMBDA`.
+1. **Cerebro ↔ perfil (Jhon ↔ Samuel).** Cómo el cerebro lee y escribe el perfil por `id`. Un
+   endpoint de lectura y un `PATCH` para actualizar.
+2. **Canales ↔ cerebro (Samuel ↔ Jhon).** Cómo cada canal (WhatsApp, web) invoca al cerebro y le
+   pasa el `id` del usuario. El cerebro responde igual sin importar el canal.
+3. **`recomendar(perfil)` (Jhon ↔ Luis).** Qué recibe y qué devuelve, y la forma de `reglas.json`
+   que consume. Contrato en `ANALISIS-PROPENSION.md` sección 6.
+4. **Handoff (Samuel).** Cómo el link de WhatsApp lleva el `id` a la web para que cargue el perfil.
 
-Es un mensaje y cambia el alcance de toda la Fase 1. **Hacerlo antes que nada.**
+**Nota sobre los códigos griegos:** el diccionario NO va a llegar (Colsubsidio lo confirmó). No es
+un pendiente de Fase 0. Se trabaja con lo legible + caracterización por comportamiento.
 
-Si no lo entregan, la Fase 1 sigue igual: se trabaja con los campos legibles y se caracterizan los
-códigos por comportamiento observable. No bloquea, pero saberlo temprano ahorra trabajo.
-
-### 0.2 Congelar los cuatro contratos entre componentes
-
-Sin esto nadie puede trabajar en paralelo sin pisarse. Salen de las preguntas abiertas de
-`EMULADOR_ARQUITECTURA.md`.
-
-1. **Luis a Jhon (RAG).** Endpoint, formato de la consulta y forma de la respuesta. Con la
-   arquitectura vigente, la consulta no es "dame seguros relevantes" sino "dame los productos de la
-   familia X que apliquen a este perfil".
-2. **Luis a Samuel (perfil).** Cómo se notifica un cambio en `perfil_crudo`. Un `PATCH` HTTP alcanza.
-3. **El motor.** Dónde vive `recomendar(perfil)`, qué recibe y qué devuelve. Ver Fase 3.
-4. **`estado_crm.fase`.** Quién la mueve y en qué evento conversacional.
-
-**Terminada cuando:** los cuatro contratos están escritos en el repo y los cuatro los leyeron.
+**Terminada cuando:** los cuatro contratos están escritos en el repo y los leyeron los involucrados.
 
 ---
 
 ## FASE 1 — Datos y reglas de propensión
 
-**Dueño:** Luis. Samuel apoya con la tubería de ETL, que ya existe.
-**Depende de:** Fase 0.2. Idealmente también de 0.1, pero no bloquea.
-**Instrucciones completas:** `ANALISIS-PROPENSION.md`. Guía técnica de DuckDB en
-`GUIA-ANALISIS-DATOS.md`.
+**Dueño:** Luis. (El ETL y buena parte del perfilado ya los corrió Samuel: revisar `scripts/` y
+`output/` del repo antes de rehacer nada.)
+**Depende de:** Fase 0.3.
+**Instrucciones completas:** `ANALISIS-PROPENSION.md`.
 
 ### Pasos
 
-1. **Reapuntar el ETL al archivo nuevo.** La tubería de Samuel sirve tal cual. Cambian el tamaño
-   (500K en vez de 1,56M) y las columnas: se fueron `NOMBRE_COMPLETO` y `ESTADOAFILIADO`, entró
-   `RANGO_SALARIAL`. **Los resultados del análisis anterior no se heredan.**
-2. **Perfilar.** Vocabulario exacto de cada columna con conteos, porcentaje de nulos y de vacíos
-   (`''` no es `NULL`), y confirmar que la base no viene filtrada.
-3. **Caracterizar los códigos griegos por comportamiento observable.** Para cada código: reparto de
-   edad, de rango salarial, de género, y tasa de cada marca de consumo. Es lo que convierte cuatro
-   columnas inútiles en cuatro columnas usables **sin inventar qué significan**.
-4. **Cruces.** Cada marca de consumo contra edad, rango salarial y cada código. Al cruzar, excluir
-   por par las filas sin alguno de los dos campos.
-5. **Volver a medir si el consumo es señal independiente del perfil.** En la base anterior lo era, y
-   de eso depende si las reglas suman o se pisan.
-6. **Medir el solape entre `PIRAMIDE_NUEVA` y `EMPRESA_FOCO`.** Antes eran casi la misma cosa. Si se
-   repite, usar solo una: contar la misma evidencia dos veces infla el score.
-7. **Escribir las reglas.** Explícitas, con su justificación y su respaldo numérico.
+1. **Perfilar** la base de 500K: vocabulario y conteos por columna, nulos y vacíos.
+2. **Caracterizar los códigos griegos por comportamiento observable** (edad, ingreso, marcas). Es lo
+   que los vuelve usables sin inventar qué significan.
+3. **Cruces** marca contra perfil, excluyendo por par las filas con campos vacíos.
+4. **Escribir las reglas** explícitas, con justificación y respaldo numérico.
 
 ### Salida
 
-- **`lib/reglas.json`** — el artefacto que consume el motor. Contrato completo en
-  `ANALISIS-PROPENSION.md` sección 6. Campos obligatorios por regla: `razon_dato`, `respaldo`, y
-  `codigo_opaco` cuando se apoya en una columna anonimizada.
-- **`docs/LOGICA-RECOMENDACION.md`** — entregable **no negociable** del brief. Se escribe mientras
-  se analiza, no al final.
+- **`lib/reglas.json`** — el artefacto que consume el cerebro. Campos obligatorios: `razon_dato`,
+  `respaldo`, y `codigo_opaco` cuando se apoya en una columna anonimizada.
+- **`docs/LOGICA-RECOMENDACION.md`** — entregable no negociable del brief. Se escribe mientras se
+  analiza.
 
 ### Terminada cuando
 
-- Para cualquier perfil de prueba se puede señalar la regla exacta que produjo la recomendación.
-- Toda regla con `codigo_opaco` trae una métrica de comportamiento, no solo el tamaño del segmento.
-- Ninguna frase en el artefacto traduce una letra griega a una etiqueta.
+- Para cualquier perfil se puede señalar la regla que produjo la recomendación.
+- Ninguna frase traduce una letra griega a una etiqueta.
 - Las reglas corren contra un perfil con la mitad de los campos vacíos sin romperse.
 
 ---
@@ -106,168 +120,124 @@ Sin esto nadie puede trabajar en paralelo sin pisarse. Salen de las preguntas ab
 ## FASE 2 — Catálogo de seguros y RAG
 
 **Dueño:** Jhon.
-**Depende de:** nada. Puede arrancar ya.
+**Depende de:** nada. Puede arrancar ya. Es el **camino crítico**: sin catálogo no hay nada que
+recomendar.
 **Spec:** `SPEC-SCRAPE-CATALOGO.md`.
-
-Es el **camino crítico**: sin catálogo no hay nada que recomendar, por bien perfilada que esté la
-base. La Fase 3 y la Fase 4 lo necesitan.
 
 ### Pasos
 
-1. **Scrape** de la oferta pública de Colsubsidio, 22 URLs priorizadas por señal.
-2. **Estructurar** a `catalogo.json`. Campos mínimos por producto: `id`, `familia`, `aseguradora`,
-   `nombre`, `coberturas`, `exclusiones`, `prima` o su rango, `condiciones`.
-   El campo `aseguradora` no es opcional: comparar entre aseguradoras es requisito del brief.
-3. **Indexar** para búsqueda semántica. Vector store sobre el Postgres que ya existe (pgvector), o
-   Pinecone si ya está andando. Una cuenta menos es una cosa menos que falla en vivo.
-
-### Salida
-
-- **`lib/catalogo.json`** — productos con coberturas, exclusiones y condiciones.
-- **Índice consultable** por familia y por perfil.
+1. **Scrape** de la oferta pública de Colsubsidio.
+2. **Estructurar** a `catalogo.json`: `id`, `familia`, `aseguradora`, `nombre`, `coberturas`,
+   `exclusiones`, `prima` o rango, `condiciones`. `aseguradora` no es opcional.
+3. **Indexar** para búsqueda semántica en Supabase (pgvector).
 
 ### Terminada cuando
 
-- Cada familia de seguro de las reglas de la Fase 1 tiene al menos un producto asociado.
-- Toda prima o rango que aparezca sale del catálogo. Si el catálogo público no trae primas, se
-  sintetizan rangos coherentes por edad y **se declaran como ilustrativos en pantalla**.
-- Una consulta por familia devuelve productos de esa familia, con sus exclusiones incluidas.
+- Cada familia de las reglas de la Fase 1 tiene al menos un producto asociado.
+- Toda prima que aparezca sale del catálogo. Si no hay primas, se sintetizan rangos por edad y se
+  declaran ilustrativos en pantalla.
 
 ---
 
-## FASE 3 — El motor de recomendación
+## FASE 3 — El cerebro
 
-**Dueño:** Jhon las reglas de negocio, Luis la integración.
+**Dueño:** Jhon.
 **Depende de:** Fases 1 y 2.
+
+Un solo cerebro que atienden los dos canales: agente conversacional + `recomendar(perfil)` + RAG.
 
 ### La regla de arquitectura que sostiene todo
 
 - **Las reglas explícitas deciden la FAMILIA** y producen la justificación.
 - **El RAG recupera el PRODUCTO concreto** dentro de esa familia.
-- **El LLM conversa y narra.** No decide familia, ni producto, ni prima.
+- **El LLM conversa y narra.** No decide familia, producto ni prima.
 
-Si la búsqueda semántica ordena por relevancia y eso define la recomendación, la respuesta al
-jurado es "porque el vector quedó cerca", que es la caja negra que el brief descalifica.
+Si la búsqueda semántica ordena por relevancia y eso define la recomendación, la respuesta al jurado
+es "porque el vector quedó cerca", la caja negra que el brief descalifica.
 
-### Qué se construye
-
-`recomendar(perfil)`, función pura que lee `reglas.json` y `catalogo.json` y devuelve:
-
-```
-{
-  familia, producto_id, aseguradora, prima,
-  razon: { dato, conversacion, respaldo },
-  coberturas, exclusiones, alternativas
-}
-```
-
-Sin servicio aparte, sin llamada de red, sin punto de falla en vivo. Y las reglas quedan legibles
-en el diff de Git, que es literalmente lo que el brief exige.
+`recomendar(perfil)` es una función que lee `reglas.json` y `catalogo.json` y devuelve familia,
+producto, prima, la razón (con sus dos patas), coberturas, exclusiones y alternativas.
 
 ### Terminada cuando
 
-- Dos perfiles que difieren en una sola variable devuelven resultados visiblemente distintos.
-- Pedirle un producto que no está en el catálogo devuelve "no lo tengo", nunca uno inventado.
-- La `razon` viene con sus dos patas pobladas: el criterio de la regla y lo que la persona contó.
+- Dos perfiles que difieren en una variable devuelven resultados visiblemente distintos.
+- Pedir un producto que no está devuelve "no lo tengo", nunca uno inventado.
+- La razón viene con sus dos patas pobladas.
 
 ---
 
-## FASE 4 — Vista cliente
+## FASE 4 — Canales y vista del usuario
 
-**Dueño:** Sarah diseña, Luis cablea.
-**Depende de:** Fase 3 para los datos reales. El diseño puede arrancar antes con datos falsos.
-**Especificación:** `UX.md`.
+**Dueño:** Samuel implementa sobre el open source; Sarah diseña las vistas.
+**Depende de:** Fase 3 para datos reales; el diseño y el scaffold arrancan antes.
+**Diseño:** `UX.md` (Sarah).
 
-**Es la fase que decide el reto.** El criterio 5 del brief dice que el jurado recorre el flujo solo,
-sin que nadie del equipo le explique nada. Es el único criterio que no se puede compensar.
+**Es la fase que decide el reto.** El jurado recorre la web solo, sin que nadie explique nada. Es el
+único criterio que no se puede compensar.
 
 ### Qué se construye
 
-- Chat estilo WhatsApp, arranque en frío.
-- Discovery con las 5 preguntas de `CAPA-CUALITATIVA.md`. Una pregunta por turno, nunca dos.
-- Recomendación con la razón compuesta visible en pantalla.
-- Tarjeta de comparación, dos o tres opciones, con las aseguradoras.
-- Control de ajuste de cobertura con recálculo en vivo.
-- Exclusiones desplegadas antes de que la persona las pida.
-- Cierre: aceptación, confirmación, resumen, y aviso de que un asesor retoma para finalizar.
-- El momento de gemelos: el jurado cambia una variable y ve recalcularse todo.
+- **La web:** chat estilo WhatsApp, discovery con las 5 preguntas (una por turno), recomendación con
+  razón compuesta, tarjeta de comparación, ajuste de cobertura en vivo, exclusiones a la vista, y
+  cierre (aceptación, confirmación, resumen).
+- **El simulador de WhatsApp:** oferta proactiva, precalificación de 2-3 preguntas, y el handoff a
+  la web con el perfil cargado. Que se pueda cerrar ahí en un caso corto.
+- **El handoff real** entre los dos, por `id`.
 
-**Regla que ordena el diseño:** lo que va dentro del chat tiene que ser algo que WhatsApp también
-podría mostrar. Lo que solo funciona en web va fuera del chat y tiene que ser prescindible.
+**Regla de diseño:** lo que va dentro del chat tiene que poder existir en WhatsApp. Lo que solo
+funciona en web va fuera del chat y es prescindible.
 
 ### Terminada cuando
 
-**Alguien ajeno al equipo abre la URL, la recorre sin explicación y llega al resumen final.**
-Se prueba apenas haya algo navegable, no el último día. Si necesita ayuda para avanzar, todo lo
-demás se detiene hasta arreglarlo.
+**Alguien ajeno al equipo abre la URL de la web, la recorre sin explicación y llega al resumen.**
+Se prueba apenas haya algo navegable, no el último día.
 
 ---
 
 ## FASE 5 — Vista administrativa
 
 **Dueño:** Samuel.
-**Depende de:** nada para arrancar. Vocero ya funciona.
-**Base:** Vocero CRM (MIT, Next.js 15 + Drizzle + Postgres).
+**Base:** Vocero CRM.
 
-No aparece en ninguno de los 6 criterios del brief, así que **nunca le quita tiempo a la Fase 4.**
-Pero cuesta poco porque ya está construido, y demuestra el modelo operativo completo.
+Es la vista interna que ven "los de ventas". No aparece en los 6 criterios del brief, así que
+**nunca le quita tiempo a la Fase 4**, pero cuesta poco porque Vocero ya la trae.
 
-### Qué se adapta
+Dos secciones (las define Samuel): la bandeja/CRM de conversaciones y el pipeline por fases con el
+seguro adquirido cruzado contra el perfil, más la configuración. Incluye el **toggle para apagar el
+agente y que un humano retome**, que es la contraparte del cierre: el agente escala y en la bandeja
+se ve al humano recibiendo el caso.
 
-- **Bandeja de conversaciones**, ya viene hecha.
-- **Toggle para apagar el agente y que un humano retome.** Es la contraparte del cierre de la Fase
-  4: el agente escala y en la bandeja se ve al humano recibiendo el caso. Vale más que cualquier
-  otra pantalla administrativa.
-- **CRM por fases** con el seguro comprado, cruzado contra los datos reales del afiliado.
-- Marca Colsubsidio.
-
-### Decisión de despliegue pendiente
-
-Vercel apuntando a Supabase como Postgres, o VPS con Docker como Vocero trae de fábrica.
-**A verificar:** que la bandeja en tiempo real, que usa SSE, aguante los límites de duración de
-función en Vercel. Si no aguanta, se degrada a polling.
-
-### No se construye
-
-Envíos masivos. Vocero no los incluye por diseño, Meta exige plantilla aprobada y opt-in previo, y
-la base no trae teléfono ni correo.
+**No se construye:** envíos masivos (Vocero no los trae por diseño, Meta exige plantilla y opt-in).
 
 ---
 
 ## FASE 6 — Entregables
 
 **Dueño:** todos, coordina Jhon.
-**Depende de:** las anteriores.
 
-1. **README que levanta el proyecto en menos de 2 minutos.** Requisito explícito del brief.
-   Se prueba con clone limpio y cronómetro, no a ojo.
-2. **`docs/LOGICA-RECOMENDACION.md`**, que sale de la Fase 1.
-3. **`docs/ARQUITECTURA.md`, `docs/FLUJO.md`, `docs/LIMITACIONES.md`.** Diagramas en Mermaid dentro
-   de los `.md`, que se ven en GitHub y se diffean.
-   En limitaciones va lo que el brief excluyó y lo que WhatsApp no permite. Ser explícito ahí suma
-   credibilidad, no la resta.
-4. **URL desplegada.**
+1. **README que levanta el proyecto en menos de 2 minutos.** Requisito del brief. Se cronometra.
+2. **`docs/LOGICA-RECOMENDACION.md`** (de la Fase 1).
+3. **`docs/ARQUITECTURA.md`, `docs/FLUJO.md`, `docs/LIMITACIONES.md`.** Diagramas en Mermaid.
+4. **URL desplegada.** Vercel con Supabase como Postgres (a verificar que el SSE de la bandeja
+   aguante los límites de función; si no, se degrada a polling).
 5. **Pitch de 2 minutos y video.**
 
 ---
 
 ## Si sobra tiempo, en este orden
 
-1. **Pantalla de "a quién le hablaríamos hoy":** segmentos priorizados con su tamaño real, el
-   disparador y el canal sugerido. Es el bonus de timing y canal que el brief premia
-   explícitamente, y sale casi gratis del análisis de la Fase 1.
-2. **Laboratorio de agente**, idea tomada de Vocero: clientes simulados conversando contra nuestro
-   agente, con un juez que puntúa. Es evidencia de calidad que se le puede mostrar al jurado.
+1. **PDF de resumen** al cierre, enviado por WhatsApp. Refuerza el cierre; no es una póliza.
+2. **Pantalla de "a quién le hablaríamos hoy":** segmentos priorizados, disparador, canal. Bonus de
+   timing y canal que el brief premia, sale casi gratis del análisis.
+3. **Laboratorio de agente** (idea de Vocero): clientes simulados con un juez que puntúa. Evidencia
+   de calidad para el jurado.
 
 ---
 
 ## Lo que no se construye, pase lo que pase
 
 - Integración con aseguradoras, firma electrónica, pasarela de pago, siniestros, renovaciones.
-  **Los excluye el propio brief.**
-- Voz, telefonía, WhatsApp real. Ruta declarada en el README, no se construye.
-- Modelo de machine learning decidiendo en runtime. No hay variable objetivo, y las reglas
-  explícitas ganan en explicabilidad, que es justo lo que califican.
-- Login, cuentas de usuario, multi-idioma.
-- Campañas de envío masivo.
-- Cotizador actuarial real.
+- WhatsApp real, telefonía, voz.
+- Sincronización en tiempo real entre canales (el handoff es estado compartido al cargar).
+- Modelo de ML decidiendo en runtime.
+- Login y campañas de envío masivo.

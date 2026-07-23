@@ -85,10 +85,12 @@ Esto no es instrucción de qué construir, es el contexto del problema.
 
 | Integrante | Responsabilidades |
 |---|---|
-| Sarah | UX del journey conversacional, confianza/explicabilidad, organización marca, psicología consumidor, pitch |
-| Jhon | RAG de seguros (catálogo + embeddings + búsqueda semántica), vector store (Pinecone) |
-| Samuel | Backend (APIs, integración sistema-front) + arquitectura de BD de clientes (PostgreSQL/Supabase, escalabilidad KV-like) |
-| Luis | Agente: harness, orquestación, análisis de propensión por cliente (JSON crudo + RAG → decisión), AI security |
+| Jhon | El cerebro y el RAG: scrape del catálogo, RAG en Supabase, agente conversacional, `recomendar(perfil)` |
+| Samuel | Full stack: open source (Vocero), las 3 vistas sobre el diseño de Sarah, los canales y el backend, la base de clientes |
+| Sarah | Diseña las 3 vistas en Claude Design (no programa); confianza/explicabilidad, marca, pitch |
+| Luis | Análisis de propensión: produce `reglas.json` que alimenta el cerebro |
+
+> Reparto rehecho el 2026-07-23. Fuente vigente de roles: `BRIEF.md` y `PLAN-CONSTRUCCION.md`.
 
 ---
 *Documento generado a partir de capturas de las diapositivas oficiales y del brief informal del reto. Si algo no coincide exactamente con lo presentado, por favor corregir directamente en este archivo antes de compartirlo con el resto del equipo.*
