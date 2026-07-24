@@ -3,10 +3,118 @@
 **Para:** Luis, y para el Claude Code que trabaje con él en este frente.
 **Entregable:** `reglas.json`, más el documento que justifica cada regla.
 **Insumo:** el CSV de ~500.000 afiliados que la organización entregó el 23 de julio.
-**Actualizado:** 2026-07-23, tras el cambio de base.
+**Actualizado:** 2026-07-23, tras el cambio de base. + 2026-07-24 (datos simulados autorizados, dos cerebros, entrega a Supabase). Ver "EMPIEZA AQUÍ".
 
 Si eres un agente leyendo esto: lee el documento completo antes de escribir código. Las secciones
 2, 3 y 4 contienen restricciones que invalidan varios enfoques que parecen obvios.
+
+---
+
+## 🔴 EMPIEZA AQUÍ — Actualización 2026-07-24 (Luis + su asistente de IA)
+
+**Si eres el asistente de IA de Luis: antes de escribir una sola línea, PREGÚNTALE su estado
+actual.** No repitas trabajo que Samuel o Luis ya hicieron. Preguntas de arranque, obligatorias:
+
+1. ¿Qué versión del dataset tienes cargada: la nueva de ~500K, o todavía la vieja de 1,56M?
+2. ¿Qué ya corrió Samuel en `scripts/` y `output/` del repo (ETL, perfilado)? ¿Qué de eso reusamos?
+3. ¿Ya existe un `reglas.json`, aunque sea parcial? ¿Un `LOGICA-RECOMENDACION.md` empezado?
+4. ¿Dónde está el CSV de afiliados: local, en el repo, o ya en Supabase?
+5. ¿Tienes el Excel de ~75 registros de la base vieja? Es el vocabulario para simular (ver abajo).
+
+Con esas respuestas ubicas el estado real y arrancas donde toca, no desde cero.
+
+### Novedad que actualiza la §2.3 y la §7.4: datos simulados AUTORIZADOS
+
+El 2026-07-24, **30X + Colsubsidio autorizaron formalmente alimentar la base con datos simulados**
+para la demo. Cita textual: *"Pueden alimentar la base 2 con datos simulados para que tenga mayor
+información y puedan trabajar con ella... Por ahora, nos pueden mostrar lo que quieren lograr con
+datos simulados o con datos reales de sus integrantes."* El mapeo real solo llega si la propuesta
+gana y pasa a producción.
+
+Qué habilita, y qué NO:
+- **SÍ:** llenar las columnas anonimizadas con valores legibles plausibles, para que la demo tenga
+  profundidad. La intención es **interpretar con los datos dados, no reetiquetar a ciegas.**
+- **NO cambia la honestidad:** los valores son **SIMULADOS**, no el diccionario real. En pantalla y
+  en los docs se marcan como simulados. Nunca se afirma "LAMBDA = monoparental" como hecho.
+- Por eso la §2.3 y la §7.4 se relajan **solo bajo la etiqueta de simulado**: se puede mostrar
+  "Familia monoparental (simulado)" en un perfil de demo; sigue prohibido afirmar el mapeo real.
+
+### El método correcto (no muestrear al azar)
+
+Reetiquetado **consistente**, no aleatorio por fila: cada código griego → UN valor simulado fijo
+(SIGMA → siempre el mismo). Así preservas las correlaciones reales que ya viven dentro de los
+códigos; solo asumes la identidad de la etiqueta, no la estructura. Base para asignar: el
+alineamiento por frecuencia que Samuel ya hizo (§3) + la caracterización por comportamiento (§3,
+camino 2). **Primero perfila cardinalidades** por columna en ambos datasets: ese conteo decide si
+hay biyección limpia o si hay que colapsar.
+
+### ⚠️ Flag de PIRAMIDE_NUEVA
+
+`PIRAMIDE_NUEVA` dice "NUEVA": Colsubsidio casi seguro **cambió el esquema de pirámide** respecto a
+la base vieja. Las etiquetas viejas ("2 Medianas", "1 Grandes") pueden **no corresponder** al nuevo
+esquema. NO mapees viejo→nuevo en esta columna sin confirmar cardinalidad y lógica. Si no calza,
+déjala caracterizada por comportamiento (§3, camino 2) en vez de simular una etiqueta que puede
+estar mal. Además, mide su solape con `EMPRESA_FOCO` (§5, paso 7) antes de usar ambas.
+
+### Modelo de IA recomendado para este frente
+
+Análisis de datos + derivación de reglas con restricciones de honestidad = tarea de síntesis, no
+mecánica. Usa **Claude en Claude Code** (para ejecutar DuckDB/pandas con tool-use): **Sonnet 5**
+para el grueso del perfilado y los cruces; sube a **Opus 4.8** para escribir las reglas finales y el
+`LOGICA-RECOMENDACION.md`, donde el criterio pesa. **No uses un modelo sin ejecución de código:**
+este frente vive de correr conteos reales, no de estimarlos.
+
+### Herramienta
+
+DuckDB para ingestar y cruzar los ~500K (no cabe cómodo en Excel), pandas para el reetiquetado
+categórico. Guía paso a paso con parámetros y anti-patrones: `GUIA-ANALISIS-DATOS.md`. La skill
+`tabular-data-analysis` es el playbook.
+
+### Dónde encaja tu trabajo: los dos cerebros
+
+El sistema tiene dos cerebros que se unen, pero con roles distintos (esto protege el gate del
+jurado):
+
+- **Cerebro lógico (objetivo):** tu `reglas.json` + el RAG del catálogo (de Jhon). Las reglas
+  deciden la FAMILIA con justificación citable; el RAG elige el PRODUCTO dentro de ella.
+  Determinístico.
+- **Cerebro conversacional (contextual):** el LLM. Conversa, COMPLETA el perfil (llena variables que
+  el dato no tiene: dependientes, independiente sin respaldo, el dolor real, el futuro soñado) y
+  aporta la pata "por lo que me contaste".
+- **El merge:** el conversacional ALIMENTA al lógico (le pasa el perfil ya completado con la charla);
+  el lógico DECIDE; el conversacional NARRA con las dos patas. La familia NUNCA la decide la
+  conversación sola, o vuelve a ser caja negra.
+
+Tu `reglas.json` corre dentro de `recomendar(perfil)`, sobre un perfil que es PARTE dato (Supabase)
++ PARTE conversación. Diseña las reglas para que **degraden** (§2.4): muchas variables llegan vacías
+y se llenan en el chat, en runtime.
+
+### Qué tienes que entregarle a Jhon para montar Supabase
+
+Jhon monta esto en Supabase. Cuando termines, de ti necesita:
+
+1. **`clientes.csv`** — la base de perfiles con columnas legibles + las simuladas, y un **`id` único
+   por persona** (para el handoff por id). Es la tabla relacional de clientes, NO vectorial.
+2. **`reglas.json`** — el motor de decisión (contrato en §6). Va como archivo en el repo, no a Supabase.
+3. **`diccionario-simulado.json`** — qué código griego → qué valor simulado, por columna, **marcado
+   como SIMULADO**. Es lo que permite mostrar valores legibles en la demo sin mentir.
+4. **`LOGICA-RECOMENDACION.md`** — el entregable no negociable del brief (§8).
+5. **El esquema de columnas** (nombre + tipo de cada campo) para crear la tabla.
+
+```
+# CAMPOS QUE JHON ESPERA DEL CSV (para la tabla de clientes en Supabase):
+#   id                       -> identificador único por persona (para el handoff por id)
+#   genero                   -> F | M
+#   rango_edad               -> legible ("20 a 35 años")
+#   rango_salarial           -> legible ("Entre 1 y 1.5")   [capacidad de pago]
+#   ciudad_afiliado          -> legible ("BOGOTA D.C.")
+#   hoteles, piscilago, drogueria, agencias, vivienda   -> SI | NO   (marcas de consumo)
+#   categoria, segmento_grupo_familiar, segmento_poblacional, piramide_nueva, empresa_foco
+#                            -> el código griego MÁS su valor simulado legible (dos columnas por campo:
+#                               p.ej. categoria_cod="SIGMA", categoria_sim="Categoría B (simulado)")
+# NOTA: las variables de conversación (dependientes, dolor, futuro soñado) NO van en el CSV;
+#       las llena el agente en el discovery, en runtime.
+```
 
 ---
 
@@ -73,7 +181,9 @@ depende de a qué cluster cayó la persona, la respuesta al jurado es "porque ca
 perdemos el gate.
 
 **2.3 Nunca afirmar qué significa un código griego sin evidencia.** Ver la sección 3. Se puede
-describir su comportamiento, no inventar su etiqueta.
+describir su comportamiento, no inventar su etiqueta. (Excepción autorizada 2026-07-24: se pueden
+usar valores SIMULADOS marcados como tales para la demo; ver "EMPIEZA AQUÍ". Sigue prohibido
+afirmar el mapeo real como hecho.)
 
 **2.4 Las reglas tienen que degradar.** Van a correr sobre perfiles incompletos, y sobre gente que
 no está en la base. Una regla que evalúa un campo vacío simplemente no dispara. No lanza error, no
@@ -318,9 +428,10 @@ persona contó en la conversación. La segunda la arma el agente, no este archiv
    Si la única explicación es "el modelo lo dijo" o "el RAG lo trajo", no pasa.
 2. Toda regla tiene su `respaldo` con el tamaño absoluto del segmento.
 3. **Toda regla con `codigo_opaco: true` trae una métrica de comportamiento**, no solo el tamaño.
-4. **Ninguna regla afirma qué significa un código griego.** Buscar en todo el archivo y en la
-   documentación cualquier frase que traduzca una letra griega a una etiqueta. No debe haber
-   ninguna, salvo que llegue el diccionario oficial.
+4. **Ninguna regla afirma qué significa un código griego** como hecho. Buscar en todo el archivo y
+   en la documentación cualquier frase que traduzca una letra griega a una etiqueta. No debe haber
+   ninguna, salvo que llegue el diccionario oficial, o que el valor esté explícitamente marcado como
+   SIMULADO bajo la autorización del 2026-07-24 (ver "EMPIEZA AQUÍ").
 5. Las reglas corren contra un perfil con la mitad de los campos vacíos sin romperse.
 6. Dos perfiles que difieren en una sola variable producen familias o pesos visiblemente distintos.
    Es el momento de gemelos del brief y se prueba desde el análisis, no solo en la interfaz.
