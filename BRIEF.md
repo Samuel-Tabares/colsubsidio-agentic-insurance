@@ -177,9 +177,34 @@ más resumen. No hay pago simulado ni certificado de póliza.
 1. **Ajustar coberturas.** El usuario modifica su cobertura y ve el efecto.
 2. **Comparar opciones.** Vista comparativa entre alternativas.
 3. **Resolver dudas.** Preguntas y respuestas dentro del flujo, sin llamar a nadie.
-4. **Catálogo multi-aseguradora.** El modelo de datos necesita `aseguradora` como campo.
-   Comparar entre aseguradoras distintas es un valor real que un asesor humano difícilmente da
-   sin sesgo.
+4. **Catálogo con campo `aseguradora`.** El modelo de datos mantiene `aseguradora` como campo,
+   pero en el catálogo público de Colsubsidio ese campo siempre resuelve a "Colsubsidio" (sponsor,
+   no underwriter). La comparación se hace entre **productos, coberturas y precio**, no entre
+   aseguradoras distintas.
+
+> **Nota del equipo — por qué el comparador NO compara aseguradoras** (decisión 2026-07-23, Jhon)
+>
+> El scrape de las 22 URLs del catálogo público confirmó que `aseguradora` resuelve a "Colsubsidio"
+> en las 22. Un scrape dirigido, con un prompt que prohibía explícitamente "Colsubsidio", devolvió
+> vacío: Sura, Allianz y demás underwriters no están en el HTML público, solo aparecen en las
+> condiciones o al momento de cotizar. Colsubsidio actúa como **sponsor** (facilita el acceso a
+> seguros de varias aseguradoras), no como asegurador, y así se presenta en toda su web.
+>
+> Construir "pestañas por aseguradora" mostraría el mismo nombre en las 22 tarjetas: se ve roto y
+> **sobrepromete** una comparación entre aseguradoras que la data no respalda. Por eso el eje de
+> comparación es **producto, cobertura y precio**, que la data sí soporta al 100%.
+>
+> Encaja con el propio brief: el "flujo multi-aseguradora en producción" ya está fuera de alcance
+> (ver "Qué NO toca este reto"), y comparar aseguradoras es "valor real" (bonus), NO uno de los dos
+> gates calificados (explicabilidad + confianza). El hueco cuesta un bonus, no un criterio.
+>
+> **Para quien construya el comparador:** no montes UI de tabs por underwriter. El campo
+> `aseguradora` se queda en el modelo de datos (poblado con "Colsubsidio") por si en producción se
+> conecta a los sistemas reales de cada aseguradora.
+>
+> **Para el system prompt del agente (Fase 3):** aclarar que Colsubsidio es **sponsor**, no
+> aseguradora ni intermediario. Si el usuario pregunta "¿quién me asegura?", el agente usa ese
+> framing y no afirma que Colsubsidio sea el underwriter.
 
 ## D. Las variables de propensión, que nos regalaron
 
@@ -375,7 +400,7 @@ La razón que ve el cliente tiene dos patas: **por tu perfil** (lo que dicen los
 Principio de arquitectura: **los datos definen el mapa, la conversación ubica a la persona en él.**
 
 La superficie es un hilo estilo WhatsApp, pero con tarjetas interactivas dentro del chat: el
-comparador tiene pestañas por aseguradora, la cobertura tiene slider, las exclusiones se
+comparador tiene pestañas por producto/opción, la cobertura tiene slider, las exclusiones se
 despliegan. El usuario nunca sale del chat.
 
 ## La idea central: un cerebro, dos canales, un perfil compartido
