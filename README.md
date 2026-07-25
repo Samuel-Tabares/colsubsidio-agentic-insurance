@@ -100,6 +100,10 @@ recomendación con su razón visible → compara opciones → ajusta coberturas 
 cierra con aceptación, confirmación y resumen. Arquitectura completa en [BRIEF.md](BRIEF.md) y el
 plan de construcción en [PLAN-CONSTRUCCION.md](PLAN-CONSTRUCCION.md).
 
+Detalle de cada pieza del cerebro, en lenguaje llano, con ejemplo de punta a punta:
+[COMO-FUNCIONA-EL-CEREBRO.md](COMO-FUNCIONA-EL-CEREBRO.md). De dónde sale el catálogo, cómo se
+construyó el RAG en Supabase y sus caveats de calidad: [CATALOGO-Y-RAG.md](CATALOGO-Y-RAG.md).
+
 ---
 
 ## Roadmap
@@ -107,7 +111,7 @@ plan de construcción en [PLAN-CONSTRUCCION.md](PLAN-CONSTRUCCION.md).
 - [x] Reemplazo de la base de afiliados (500K registros, sin PII)
 - [x] Pipeline de ETL y esquema Postgres
 - [x] Documentación de contexto, reglas de propensión y UX
-- [ ] Scrape y estructura del catálogo de seguros + RAG
+- [x] Scrape y estructura del catálogo de seguros + RAG
 - [ ] `reglas.json` de propensión desde el análisis
 - [ ] El cerebro (`recomendar()` + agente)
 - [ ] Web y simulador de WhatsApp sobre el diseño de las 3 vistas
