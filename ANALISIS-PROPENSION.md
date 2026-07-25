@@ -282,7 +282,11 @@ corregirlas o descartarlas.**
 - ⚠️ `PISCILAGO` está **muerta**: 100% NO en toda la base nueva. Era la señal de accidentes;
   esa familia hay que buscarla por edad, ingreso o conversación.
 - `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
-  ofrecer. Es la variable nueva y es la más valiosa que entró.
+  ofrecer. Es la variable nueva y es la más valiosa que entró. Actualización 2026-07-25: el
+  catálogo de Jhon ya tiene primas reales para calibrar contra (antes no había ninguna). El piso es
+  $12.000/mes (vida, Pan American Life) y el techo con precio publicado es $96.600/mes (medicina
+  prepagada mascotas, VetPlus perros). Ver "Qué tienes que entregarle a Jhon" más abajo,
+  `capacidad_pago`.
 - `RANGO_EDAD` → modula familia y monto.
 
 **Rotas por la anonimización, se recuperan por conversación:**
@@ -398,7 +402,9 @@ responde el gate del jurado.
   "capacidad_pago": {
     "campo": "RANGO_SALARIAL",
     "topes": { "Menor al SM": 0, "Entre 1 y 1.5": 0, "Entre 8 y 10": 0 },
-    "nota": "prima mensual maxima sugerida por tramo salarial"
+    "piso_catalogo": 12000,
+    "techo_catalogo_publicado": 96600,
+    "nota": "prima mensual maxima sugerida por tramo salarial. piso_catalogo y techo_catalogo_publicado son el minimo y el maximo de precio_mensual_desde entre los planes del catalogo de Jhon (2026-07-25, 9 de 22 productos con al menos un plan con precio). Ningun tope deberia quedar por debajo de piso_catalogo, ver S7."
   },
   "desempate": "mayor peso acumulado; si empatan, gana la familia con el segmento mas grande",
   "default": "si ninguna regla dispara, la conversacion decide sola con las 5 preguntas"
@@ -436,6 +442,12 @@ persona contó en la conversación. La segunda la arma el agente, no este archiv
 6. Dos perfiles que difieren en una sola variable producen familias o pesos visiblemente distintos.
    Es el momento de gemelos del brief y se prueba desde el análisis, no solo en la interfaz.
 7. Ninguna regla usa `PIRAMIDE_NUEVA` y `EMPRESA_FOCO` a la vez, si el paso 7 confirma el solape.
+8. Ningún tope de `capacidad_pago` queda por debajo de `piso_catalogo` ($12.000, ver §6). Si el
+   tramo salarial más bajo ("Menor al SM") no alcanza ni para el producto más barato del catálogo,
+   ese caso se resuelve con un mensaje honesto ("para tu presupuesto, lo mejor es hablar con un
+   asesor sobre opciones"), nunca recomendando un producto que la persona no puede pagar. Es un
+   hueco que el jurado puede encontrar preguntando qué le muestran a alguien que gana menos de un
+   mínimo.
 
 ---
 
