@@ -177,34 +177,43 @@ más resumen. No hay pago simulado ni certificado de póliza.
 1. **Ajustar coberturas.** El usuario modifica su cobertura y ve el efecto.
 2. **Comparar opciones.** Vista comparativa entre alternativas.
 3. **Resolver dudas.** Preguntas y respuestas dentro del flujo, sin llamar a nadie.
-4. **Catálogo con campo `aseguradora`.** El modelo de datos mantiene `aseguradora` como campo,
-   pero en el catálogo público de Colsubsidio ese campo siempre resuelve a "Colsubsidio" (sponsor,
-   no underwriter). La comparación se hace entre **productos, coberturas y precio**, no entre
-   aseguradoras distintas.
+4. **Catálogo con campo `aseguradora`.** El modelo de datos mantiene `aseguradora` como campo a
+   nivel producto, y en el catálogo público de Colsubsidio ese campo siempre resuelve a
+   "Colsubsidio" (sponsor, no underwriter) — es correcto, es el canal de compra. El underwriter
+   real (Sura, Allianz, BMI, MetLife...) sí es público y vive dentro de cada plan, en la columna
+   `planes` (actualización 2026-07-25, ver nota abajo). La comparación del MVP se hace entre
+   **productos, coberturas y precio**, no entre aseguradoras distintas; el dato de aseguradora real
+   queda disponible en `planes` si se decide usarlo más adelante.
 
-> **Nota del equipo — por qué el comparador NO compara aseguradoras** (decisión 2026-07-23, Jhon)
+> **Nota del equipo — por qué el comparador NO compara aseguradoras** (decisión 2026-07-23, Jhon.
+> Corregida 2026-07-25: el hecho que la sustentaba era falso, la decisión de scope se mantiene)
 >
-> El scrape de las 22 URLs del catálogo público confirmó que `aseguradora` resuelve a "Colsubsidio"
-> en las 22. Un scrape dirigido, con un prompt que prohibía explícitamente "Colsubsidio", devolvió
-> vacío: Sura, Allianz y demás underwriters no están en el HTML público, solo aparecen en las
-> condiciones o al momento de cotizar. Colsubsidio actúa como **sponsor** (facilita el acceso a
-> seguros de varias aseguradoras), no como asegurador, y así se presenta en toda su web.
+> **Corrección 2026-07-25:** el párrafo original decía que los underwriters reales no están en el
+> HTML público. Es falso, y el error era de scraping, no del sitio: la sección de planes de varias
+> páginas de Colsubsidio carga lazy (con scroll), y el primer scrape (23 de julio) no forzaba ese
+> scroll, así que Sura, Allianz, BMI, MetLife, Chubb, Pan American Life, AXA Colpatria, Seguros
+> Bolívar, Equidad, Mapfre, Seguros Mundial y SBS quedaron invisibles para el extractor aunque
+> estaban en la página. Un re-scrape de las 22 URLs con scroll forzado (25 de julio) los recuperó
+> completos, junto con el precio real por plan. Están en la columna `planes` de `catalogo`, no en el
+> campo `aseguradora` a nivel producto (ese sigue siendo "Colsubsidio", el canal). Detalle técnico y
+> los 13 aseguradores reales encontrados: `CATALOGO-Y-RAG.md` §2.
 >
-> Construir "pestañas por aseguradora" mostraría el mismo nombre en las 22 tarjetas: se ve roto y
-> **sobrepromete** una comparación entre aseguradoras que la data no respalda. Por eso el eje de
-> comparación es **producto, cobertura y precio**, que la data sí soporta al 100%.
+> **La decisión de scope se mantiene, con la razón correcta.** Aunque el dato ya existe, montar UI
+> de tabs por aseguradora sigue sin ser prioridad del MVP: el "flujo multi-aseguradora en
+> producción" ya está fuera de alcance (ver "Qué NO toca este reto"), y comparar aseguradoras es
+> "valor real" (bonus), NO uno de los dos gates calificados (explicabilidad + confianza). El eje de
+> comparación del demo sigue siendo **producto, cobertura y precio**, que la data soporta al 100% y
+> es lo que puntúa. El dato de aseguradora real queda listo en `planes` para quien quiera usarlo
+> después, sin que haga falta re-scrapear nada.
 >
-> Encaja con el propio brief: el "flujo multi-aseguradora en producción" ya está fuera de alcance
-> (ver "Qué NO toca este reto"), y comparar aseguradoras es "valor real" (bonus), NO uno de los dos
-> gates calificados (explicabilidad + confianza). El hueco cuesta un bonus, no un criterio.
+> **Para quien construya el comparador:** no hace falta UI de tabs por underwriter para el MVP. Si
+> se quiere mostrar la aseguradora real de cada plan como dato adicional (no como eje de
+> comparación), está disponible en `planes[].aseguradora`.
 >
-> **Para quien construya el comparador:** no montes UI de tabs por underwriter. El campo
-> `aseguradora` se queda en el modelo de datos (poblado con "Colsubsidio") por si en producción se
-> conecta a los sistemas reales de cada aseguradora.
->
-> **Para el system prompt del agente (Fase 3):** aclarar que Colsubsidio es **sponsor**, no
-> aseguradora ni intermediario. Si el usuario pregunta "¿quién me asegura?", el agente usa ese
-> framing y no afirma que Colsubsidio sea el underwriter.
+> **Para el system prompt del agente (Fase 3):** Colsubsidio sigue siendo **sponsor**, no
+> aseguradora ni intermediario, esto no cambió. Si el usuario pregunta "¿quién me asegura?", el
+> agente puede nombrar la aseguradora real del plan concreto que está mostrando (ahora sí se tiene
+> el dato), aclarando que Colsubsidio es quien facilita el acceso, no quien emite la póliza.
 
 ## D. Las variables de propensión, que nos regalaron
 
