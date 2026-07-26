@@ -10,9 +10,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/ensure-db.mjs && next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/ensure-db.mjs && next start",
+    "db:up": "node scripts/ensure-db.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
