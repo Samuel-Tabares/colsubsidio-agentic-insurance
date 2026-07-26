@@ -4,14 +4,14 @@
 
 Hackathon challenge (sponsor: Colsubsidio). Build an end-to-end, self-service flow that takes a prospect from "no sé qué seguro necesito" to "ya quedé asegurado" with **no human advisor involved**. Colsubsidio is a **sponsor/distributor, not the insurer** — it surfaces third-party insurers' products; the flow matches people to existing policies, it doesn't design them.
 
-Judged criteria (full brief in `RETO_2_SEGUROS.md`):
+Judged criteria (full brief in `BRIEF.md`, Part 1):
 - Propensity to need a given insurance type must be explainable from real affiliate variables (age, beneficiaries, life events, employment, habits) — never random or "just because."
 - The offer (insurance type + coverages, not just price) must visibly differ by profile — e.g. single/no-kids vs. married-with-3-kids.
 - The experience must feel personal and trustworthy, not a generic form; plain language, no policy jargon.
 - The flow must be fully self-guided end to end (a judge can walk it without the team narrating).
 - Out of scope: real insurer integration, legally-binding e-signature, claims/renewals, real payment gateway.
 
-This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` — transcribed from the official hackathon slides, merged with the team's informal brief (formerly `contexto.md`, now folded in so nothing was lost) into one document. Event runs 2026-07-22 to 2026-07-26 in Bogotá (virtual sessions Wed/Thu, in-person at Club La Colina, Colsubsidio, Fri–Sun). The team explicitly has **not** locked the architecture yet — pending the official full challenge explanation — so treat everything in this file as current-best-guess, not final.
+This is a **team project**, not solo. Canonical brief: `BRIEF.md` — its Part 1 is the official hackathon brief transcribed verbatim from the slides (merged with the team's informal brief, formerly `contexto.md`, and formerly the standalone `RETO_2_SEGUROS.md`, both now folded in so nothing was lost); Parts 2–5 add the analysis, inputs, scope and status. Event runs 2026-07-22 to 2026-07-26 in Bogotá (virtual sessions Wed/Thu, in-person at Club La Colina, Colsubsidio, Fri–Sun). The team explicitly has **not** locked the architecture yet — pending the official full challenge explanation — so treat everything in this file as current-best-guess, not final.
 
 ## Equipo
 
@@ -22,7 +22,7 @@ This is a **team project**, not solo. Canonical brief: `RETO_2_SEGUROS.md` — t
 | **Sarah** | Diseña las 3 vistas en Claude Design (referencia exacta, no programa el frontend); confianza/explicabilidad, marca, pitch. Puede ajustar detalles de UX sobre el código montado |
 | **Luis** | Análisis de propensión: produce `reglas.json` desde la base, que alimenta el cerebro |
 
-> Reparto rehecho el 2026-07-23 (ver `PLAN-CONSTRUCCION.md` y `BRIEF.md`). Cambió respecto del
+> Reparto rehecho el 2026-07-23 (ver `ARQUITECTURA.md` y `BRIEF.md`). Cambió respecto del
 > anterior: el cerebro/agente pasó a Jhon, Samuel se volvió full stack de la superficie, Luis quedó
 > en propensión, Sarah diseña sin programar.
 
@@ -30,7 +30,7 @@ Riesgo crítico identificado por el equipo: que la recomendación de un producto
 
 ## Stack
 
-Hackathon-sponsored tools the team intends to use (get them for the sponsor perks) — **roles below reflect `RETO_2_SEGUROS.md` where confirmed, otherwise still a working hypothesis**:
+Hackathon-sponsored tools the team intends to use (get them for the sponsor perks) — **roles below reflect `BRIEF.md` where confirmed, otherwise still a working hypothesis**:
 
 | Tool | Role | Owner | Status |
 |---|---|---|---|

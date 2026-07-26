@@ -1,14 +1,19 @@
 # Reto 2 — Venta automatizada de seguros
 
-**Documento único.** Brief oficial, análisis, estado del proyecto y lo que falta definir.
-Autocontenido: quien lo lea entiende el proyecto sin abrir nada más.
+**Documento único de contexto y criterio.** Brief oficial, análisis, insumos, qué estamos
+construyendo, estado y lo que falta definir. Autocontenido: quien lo lea entiende el proyecto sin
+abrir nada más.
 
-**Actualizado:** 2026-07-23, día 2, tras el cambio de base de datos de la organización.
+**Actualizado:** 2026-07-25 (día 4). La Parte 1 se transcribió de las diapositivas oficiales
+(hackathon Colsubsidio × 30X, 22–26 julio 2026, Bogotá) y se fusionó con el brief informal del
+reto (antes `contexto.md`) para no perder detalle entre las dos versiones.
 **Repo del equipo:** `github.com/Samuel-Tabares/colsubsidio-agentic-insurance`.
-Roles y arquitectura del emulador viven allá; este documento es el contexto y el criterio.
 
-**Jerarquía:** la Parte 1 es el brief oficial verbatim y **gana sobre todo lo demás**,
-incluido este mismo documento. Si algo en las partes 2 a 5 lo contradice, gana la Parte 1.
+**Jerarquía:** la Parte 1 es el brief oficial verbatim y **gana sobre todo lo demás**, incluido este
+mismo documento. Si algo en las partes 2 a 5 lo contradice, gana la Parte 1.
+
+**Enlaces:** catálogo de seguros Colsubsidio → https://www.colsubsidio.com/seguros · dashboard
+exploratorio de datos de afiliados → ver [README](README.md).
 
 ---
 
@@ -55,10 +60,13 @@ explique nada. Si se traba, no hay forma de compensarlo.
 
 ## Quién lee qué
 
-- **Sarah (UX):** `UX.md`. Es tu documento. Este brief, para contexto.
-- **Luis (agente y análisis):** `ANALISIS-PROPENSION.md`, más la Parte 4 de acá.
-- **Samuel (datos y backend):** las Partes 3 y 4, más `EMULADOR_ARQUITECTURA.md` del repo.
 - **Todos:** la sección "EN 60 SEGUNDOS" y la Parte 1.
+- **Sarah (UX):** el diseño de las 3 vistas en Claude Design; este brief para contexto, y
+  [DEMO.md](DEMO.md) para el recorrido momento a momento.
+- **Luis (análisis):** [PROPENSION.md](PROPENSION.md), más la Parte 4 de acá.
+- **Jhon (cerebro y RAG):** [CEREBRO.md](CEREBRO.md) y [SYSTEM-PROMPT.md](SYSTEM-PROMPT.md), más la
+  Parte 4.
+- **Samuel (datos y backend):** las Partes 3 y 4, más [ARQUITECTURA.md](ARQUITECTURA.md).
 
 ---
 
@@ -73,7 +81,8 @@ identifica la necesidad, cotiza, explica las coberturas y concreta la venta. Sin
 intervención, la venta no ocurre.
 
 Ese modelo:
-- **No escala:** un asesor solo puede atender a un potencial cliente a la vez.
+- **No escala:** un asesor solo puede atender a un potencial cliente a la vez, y el crecimiento del
+  negocio de seguros está atado al número de asesores disponibles.
 - **No está disponible 24/7:** si alguien lo necesita un sábado a las 10 pm, espera al lunes.
 - **Genera experiencias inconsistentes:** cada asesor explica distinto, ofrece distinto, cierra
   distinto.
@@ -100,6 +109,14 @@ No te decimos qué construir. Te decimos qué tendría que lograr una buena solu
 
 Si tu solución logra eso, no importa si es una app, un chat, un flujo guiado o algo que no se
 nos ocurrió.
+
+### Alcance esperado de la solución
+
+- Un flujo o prototipo funcional que demuestre el recorrido completo del usuario, de principio a fin.
+- Un agente/sistema de IA que sostenga la conversación y tome decisiones (qué preguntar, qué
+  producto recomendar, cuándo escalar a un humano si es necesario).
+- Evidencia de que la solución podría integrarse con canales reales (ej. WhatsApp Business API u
+  otro canal conversacional).
 
 ### El dominio: lo que necesitas entender para resolverlo bien
 
@@ -138,6 +155,21 @@ eleva mucho el puntaje estratégico.
 - Lógica documentada que explica por qué se recomienda un seguro a determinada persona.
   **No se aceptan soluciones tipo caja negra.**
 - Pitch de 2 minutos.
+
+### Criterios de evaluación (a confirmar con el jurado)
+- Claridad y viabilidad de la propuesta de negocio.
+- Calidad de la experiencia de usuario (facilidad, confianza, transparencia).
+- Solidez técnica de la solución (arquitectura, uso de IA, manejo de datos).
+- Calidad de la presentación/pitch final.
+
+### Cronograma del evento
+- **Miércoles y jueves:** sesiones virtuales (explicación de retos, mentoría).
+- **Viernes a domingo:** hackathon presencial en Club La Colina, Colsubsidio, Bogotá (o virtual si
+  no hay cupo presencial).
+
+> *La Parte 1 se generó a partir de capturas de las diapositivas oficiales y del brief informal del
+> reto. Si algo no coincide exactamente con lo presentado, corregir directamente aquí antes de
+> compartirlo con el resto del equipo.*
 
 ---
 
@@ -196,7 +228,7 @@ más resumen. No hay pago simulado ni certificado de póliza.
 > estaban en la página. Un re-scrape de las 22 URLs con scroll forzado (25 de julio) los recuperó
 > completos, junto con el precio real por plan. Están en la columna `planes` de `catalogo`, no en el
 > campo `aseguradora` a nivel producto (ese sigue siendo "Colsubsidio", el canal). Detalle técnico y
-> los 13 aseguradores reales encontrados: `CATALOGO-Y-RAG.md` §2.
+> los 13 aseguradores reales encontrados: [CEREBRO.md](CEREBRO.md), sección "Catálogo y RAG".
 >
 > **La decisión de scope se mantiene, con la razón correcta.** Aunque el dato ya existe, montar UI
 > de tabs por aseguradora sigue sin ser prioridad del MVP: el "flujo multi-aseguradora en
@@ -285,116 +317,36 @@ sigue teniendo vacíos. Hay que medir cuántos.
 como "familia monoparental sugiere vida, porque un solo ingreso sostiene a todos". Con `LAMBDA` en
 vez de `FAMILIA MONOPARENTAL`, ese razonamiento no se puede escribir.
 
-Tres caminos, en orden de preferencia:
-
-1. **Pedirle a la organización el diccionario de códigos.** Es gratis, toma un mensaje, y si lo dan
-   vuelve todo lo anterior. **Hacerlo ya.**
-2. **Construir las reglas solo sobre los campos legibles:** `RANGO_EDAD`, `RANGO_SALARIAL`,
-   `GENERO`, `CIUDAD_AFILIADO` y las cinco marcas de consumo. Alcanza para recomendar y es
-   completamente explicable.
-3. **Describir los códigos por su comportamiento observable, sin afirmar qué significan.** En vez de
-   "eres monoparental", la razón dice "estás en el grupo que más gasto de salud tiene en la base,
-   con 61% de compra en droguería". Es honesto, es verificable con un conteo, y responde el gate
-   del jurado sin inventar la etiqueta.
-
-Los caminos 2 y 3 se combinan y funcionan aunque nunca llegue el diccionario.
-
-### Hallazgos que siguen vigentes con la base nueva
-
-1. **No hay variable objetivo.** La quinta marca es `VIVIENDA`, no un indicador de compra de
-   seguros. **No se puede entrenar un modelo supervisado de propensión**, y tampoco un modelo
-   puede decidir en runtime sin romper el gate de explicabilidad.
-2. **Las reglas deben degradar con elegancia.** Van a correr sobre perfiles incompletos y sobre
-   gente que no está en la base. Una regla que evalúa un campo vacío no dispara, no lanza error.
-3. **Fijar los strings exactos que trae el archivo.** Los datos reales traen erratas: en la base
-   anterior había un `AFILLIADO` con doble L. Si la regla no escribe el valor tal cual, no matchea.
-4. **Reportar siempre el tamaño absoluto del segmento junto al porcentaje.** Un 80% sobre 50
-   personas no es un hallazgo.
-
-### Hallazgos que quedaron obsoletos con el cambio de base
-
-- **La PII.** `NOMBRE_COMPLETO` ya no existe en la fuente. Se mantiene la advertencia solo para que
-  nadie siga trabajando con una copia de la base vieja, que sí traía nombres reales.
-- **Todo el análisis sobre las 1,56M filas.** Samuel había corrido un estudio de asociación cruzada
-  con Cramér's V sobre 66 pares de campos, con hallazgos valiosos. **Hay que rehacerlo sobre los
-  500K nuevos.** Dos resultados que conviene volver a medir antes que nada:
-  - Que el consumo casi no correlacionara con el perfil (V ≤ 0,15), que era la base para tratar las
-    marcas como señal independiente que suma.
-  - Que el segmento más grande fuera "20-35 años sin grupo familiar" con el 33% de la base. Esa
-    etiqueta ya no existe, aunque el rango de edad sigue siendo legible y esa mitad se puede
-    recuperar.
-- **La trampa metodológica del "(sin dato)" sigue aplicando** aunque los números cambien: tratar el
-  vacío como una categoría normal infla la asociación entre campos que se quedan en blanco en las
-  mismas filas. Al cruzar, excluir por par las filas sin alguno de los dos campos.
-
-### Mapeo señal a familia de producto
-
-**Lo que sigue en pie**, porque las marcas de consumo no se codificaron:
-
-- `DROGUERIA` → salud, asistencias médicas. Ya hay gasto de bolsillo recurrente en salud.
-- `HOTELES` o `AGENCIAS` → asistencia médica en viajes.
-- `VIVIENDA` → hogar, contenido y arrendamiento.
-- ⚠️ `PISCILAGO` ya NO sirve: en la base nueva viene 100% en NO (columna muerta, sin señal).
-  Era nuestra señal de accidentes personales; hay que buscar esa familia por otra vía (edad,
-  ingreso, o la conversación).
-- `RANGO_EDAD` → modula la familia y el monto.
-- `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
-  ofrecerle a esa persona. Es la variable nueva y es la mejor que tenemos para no recomendar algo
-  que no puede pagar.
-
-**Lo que se rompió con la anonimización:**
-
-- `SEGMENTO_GRUPO_FAMILIAR` con dependientes → vida y exequial. Ya no se puede escribir, porque no
-  sabemos qué código corresponde a monoparental.
-- `PIRAMIDE_NUEVA` igual a independiente → accidentes y salud. Igual problema.
-
-Esas dos eran señales fuertes. La de familia era la de mayor peso de todas, porque define el eje
-del ejemplo de gemelos del brief.
-
 **El diccionario de códigos NO va a llegar.** Colsubsidio confirmó el 23 de julio que los tokens
 griegos son intencionales, para no divulgar su clasificación interna, y que no entregarán el mapeo.
 Es final, no un pendiente. Pero **sí dieron el significado conceptual de cada campo**, lo que
 permite enmarcar en general sin saber qué token es cuál:
-- `CATEGORIA` = categoría dentro del sistema de subsidio familiar (eje de ingreso).
+- `CATEGORIA` = categoría dentro del sistema de subsidio familiar (eje de ingreso; coincide con
+  `RANGO_SALARIAL`).
 - `SEGMENTO_GRUPO_FAMILIAR` = composición del hogar.
 - `SEGMENTO_POBLACIONAL` = segmentación por ingreso, edad y PAC.
 - `PIRAMIDE_NUEVA` = tier de la empresa aportante.
 
-Entonces la señal de familia se recupera por tres vías combinadas: el encuadre conceptual de arriba
-("tu segmento de composición familiar"), la caracterización de cada token por su comportamiento
-medido (ver `ANALISIS-PROPENSION.md`), y sobre todo **preguntándola en la conversación**, que es lo
-que ya hacen las preguntas 1 y 3 del discovery ("¿quién depende económicamente de ti hoy?" y "si no
-pudieras trabajar por un mes, ¿de qué vivirías?"). Samuel además dejó un decode direccional por
-frecuencia en `CLAUDE.md`, útil como pista, nunca como etiqueta en producto.
+Los caminos para trabajar sin diccionario, el mapeo señal→familia y lo primero que hay que medir en
+la base nueva están en detalle en [PROPENSION.md](PROPENSION.md). Resumen del criterio: se recupera
+la señal por tres vías combinadas — el encuadre conceptual de arriba, la caracterización de cada
+token por su comportamiento medido, y sobre todo **preguntándola en la conversación** (preguntas 1 y
+3 del discovery). El efecto secundario es útil: **la anonimización sube el peso de la conversación
+frente al dato**, que es exactamente la arquitectura que ya habíamos elegido.
 
-Vale la pena notar el efecto secundario: **la anonimización sube el peso de la conversación frente
-al dato**, que es exactamente la arquitectura que ya habíamos elegido. Los datos siguen definiendo
-el mapa, solo que ahora el mapa tiene menos etiquetas y la conversación aporta más.
-
-### Lo primero que hay que medir en la base nueva
-
-Nada de lo que sigue se sabe todavía. Son las preguntas que el perfilado tiene que responder antes
-de escribir una sola regla. Detalle e instrucciones en `ANALISIS-PROPENSION.md`.
-
-1. **Qué comportamiento observable caracteriza a cada código griego.** Para cada uno: distribución
-   de edad, de rango salarial, y tasa de cada marca de consumo. Eso permite describirlo por lo que
-   hace sin afirmar qué es. Es el trabajo central del frente de datos.
-2. **Si el consumo sigue siendo señal independiente del perfil.** Se vuelve a medir la asociación.
-   El resultado cambia si las reglas suman o se pisan.
-3. **Cuál es el segmento más grande** con los campos legibles, empezando por rango de edad. De ahí
-   sale la persona por defecto del demo.
-4. **`CIUDAD_AFILIADO` viene vacía en el 58%** (ya medido por Samuel). No sirve como segmentación
-   primaria sin tratar ese hueco.
-5. **`EMPRESA_FOCO` tiene solo 2 valores** (`EMP_000001` 82%, `EMP_000002` 18%) y está muy correlado
-   con `PIRAMIDE_NUEVA`. Usar solo uno de los dos, no ambos como señales separadas.
+> El detalle del modelo de datos (tokens por columna, decode direccional por frecuencia,
+> confirmación de que es una extracción nueva y no un relabel) vive en [CLAUDE.md](CLAUDE.md),
+> sección "Data model notes".
 
 ## El catálogo
 
 La oferta pública de seguros de Colsubsidio (colsubsidio.com/seguros). Se scrapea a un JSON
-estructurado. Spec en `SPEC-SCRAPE-CATALOGO.md`.
+estructurado. Procedencia, calidad, caveats y cómo se construyó el RAG: [CEREBRO.md](CEREBRO.md),
+sección "Catálogo y RAG".
 
-**Riesgo abierto:** las primas. Si el catálogo público no las trae, hay que sintetizar rangos
-coherentes por edad y declararlos como ilustrativos en pantalla.
+**Riesgo resuelto (2026-07-25):** las primas. El re-scrape con scroll forzado recuperó el precio
+real por plan (9 de 22 productos con al menos un plan con cifra). Donde no hay precio publicado, la
+prima la confirma un asesor; nunca se sintetiza una cifra y se presenta como real.
 
 ---
 
@@ -435,6 +387,10 @@ en la misma base. Es lo que hace defendible el "e2e multicanal" ante el jurado.
 puerta, la precalificación, el handoff, y que se **puede** cerrar ahí con un caso corto, sin
 duplicar todo el flujo. Eso cumple el e2e en ambos canales sin construir dos veces lo mismo.
 
+> Estado de implementación 2026-07-25: la web-chat y el admin ya corren de punta a punta sobre
+> Vocero con el cerebro en modo stub; WhatsApp queda como proyecto futuro (backend ya
+> channel-agnostic). Detalle en [README](README.md) y [CLAUDE.md](CLAUDE.md), sección "App".
+
 **El cierre** es aceptación, confirmación y resumen, entregado como mensaje en el canal.
 
 ### Qué queda fuera, y por qué
@@ -467,29 +423,24 @@ duplicar todo el flujo. Eso cumple el e2e en ambos canales sin construir dos vec
 
    Por qué importa tanto: si la búsqueda semántica ordena por relevancia y eso define la
    recomendación, la respuesta honesta al jurado es "porque el vector quedó cerca". El brief dice
-   literal que no acepta soluciones tipo caja negra.
-
-   > **Esto supera el flujo descrito en `EMULADOR_ARQUITECTURA.md`**, que pone al RAG a devolver
-   > resultados ordenados por relevancia y de ahí sale el análisis de propensión. El resto de ese
-   > documento (esquema SQL, tablas de conversaciones y auditoría, separación de los cuatro objetos
-   > de datos) sigue vigente y es correcto. El enfoque vigente para propensión y reglas está en
-   > `ANALISIS-PROPENSION.md`.
+   literal que no acepta soluciones tipo caja negra. El flujo detallado del cerebro está en
+   [CEREBRO.md](CEREBRO.md); el motor de reglas y su contrato en [PROPENSION.md](PROPENSION.md).
 2. **Nada que el agente diga puede estar fuera del catálogo.** Si no está documentado, dice que
    no lo tiene. No estima, no aproxima, no completa el patrón.
 3. **El por qué se muestra dentro del producto, no en el pitch.**
 
 ## Decisiones tomadas
 
-- **Stack.** Next.js en TypeScript, serverless, deploy en Vercel. Un repo, un deploy, una rama
-  por persona.
+- **Stack.** Next.js en TypeScript sobre Vocero CRM (fork vendorizado en `app/`). Decisión del
+  2026-07-25: TS/Next sobre Vocero en vez de un backend Python aparte, porque Vocero ya trae el
+  admin, la tubería de ingesta de canal y un adaptador de IA. Detalle en [CLAUDE.md](CLAUDE.md).
 - **Punto de partida.** Préstamo de arquitectura de un proyecto previo de Jhon (agente de
   WhatsApp con RAG, ya en producción) que trae resuelto: hilo estilo WhatsApp, streaming con
   Vercel AI SDK, RAG sobre Supabase pgvector, rate limit, guardrails anti prompt injection, y
   el gating de confirmación antes de ejecutar una acción. No diseñamos arquitectura desde cero.
-- **El motor de recomendación** es una función pura en TypeScript dentro del mismo repo, que
-  lee `reglas.json` y `catalogo.json`. Python se usa solo offline para derivar `reglas.json`
-  desde los 1,5M. Un deploy menos, un punto de falla menos, y las reglas quedan legibles en
-  Git, que es justo lo que el brief exige.
+- **El motor de recomendación** es una función `recomendar()` que lee `reglas.json` y
+  `catalogo.json`. Python se usa solo offline para derivar `reglas.json`. Un deploy menos, un punto
+  de falla menos, y las reglas quedan legibles en Git, que es justo lo que el brief exige.
 - **El cerebro del agente, separado en dos.** La persuasión (tono, discovery, manejo de
   objeciones) va en el system prompt, estático. El producto (coberturas, exclusiones,
   condiciones) va en RAG. No se mezclan: si el manejo de objeciones vive en el mismo índice
@@ -504,8 +455,10 @@ duplicar todo el flujo. Eso cumple el e2e en ambos canales sin construir dos vec
 - **Canal en producción: WhatsApp**, con la web de Colsubsidio como entrada fría. Las
   limitaciones (plantillas pre-aprobadas de Meta, ventana de 24 horas, sin sliders nativos) van
   explícitas en la documentación, no escondidas.
-- **Modelo:** por decidir entre Gemini 2.5 y gpt-4o-mini. Se comparan el día 2 con el mismo
-  prompt y se congela.
+- **Modelo:** por decidir entre Gemini 2.5 y gpt-4o-mini. Se comparan con el mismo prompt y se
+  congela. (Ver también el registro de iteración en [SYSTEM-PROMPT.md](SYSTEM-PROMPT.md): gpt-4o-mini
+  tiene documentado el patrón de "completar con una cifra plausible", riesgo directo para la regla
+  de no inventar primas.)
 
 ## Lo que NO construimos
 
@@ -516,7 +469,7 @@ Si aparece la tentación, la respuesta es no.
 - Voz, telefonía, WhatsApp real. Ruta declarada en el README, no se construye.
 - Modelo de machine learning. No hay variable objetivo, y las reglas explícitas ganan en
   explicabilidad, que es justo lo que califican.
-- Login, cuentas de usuario, panel de administración, multi-idioma.
+- Login, cuentas de usuario, multi-idioma.
 - Campañas de envío masivo.
 - Cotizador actuarial real.
 
@@ -541,7 +494,8 @@ Alguien entra sin saber nada de seguros, conversa unos turnos, y sale con:
 3. Las exclusiones a la vista, sin haberlas pedido.
 4. Un resumen de que quedó asegurado, y el aviso de que un asesor retoma para finalizar.
 
-Y todo eso sin que nadie del equipo abra la boca.
+Y todo eso sin que nadie del equipo abra la boca. El recorrido exacto, turno a turno, está en
+[DEMO.md](DEMO.md).
 
 ## Preguntas ya resueltas, para no reabrirlas
 
@@ -569,8 +523,8 @@ Y todo eso sin que nadie del equipo abra la boca.
   (autogestionado), su palabra manda en flujo.
 - **Luis — análisis de propensión.** Produce `reglas.json` desde la base, que alimenta el cerebro.
 
-**Si algo entra o no al alcance:** este documento y `PLAN-CONSTRUCCION.md`. Si no está resuelto ahí,
-lo decide Jhon en el momento, sin reunión.
+**Si algo entra o no al alcance:** este documento y [ARQUITECTURA.md](ARQUITECTURA.md) (plan de
+construcción). Si no está resuelto ahí, lo decide Jhon en el momento, sin reunión.
 
 ## Por qué la base estructurada es el moat, no el agente
 
@@ -607,28 +561,28 @@ deja de ser prudencia y pasa a ser la única ruta viable.
 ## Existe y sirve
 
 - Este brief, con el análisis y los hallazgos de la base.
-- **La tubería de datos, construida y probada.** ETL validado fila por fila, esquema Postgres con
-  auditoría, y el análisis de asociación cruzada. Trabajo de Samuel, ya en el repo. **Ojo: corrió
-  sobre la base vieja de 1,56M.** La tubería sirve tal cual, hay que reapuntarla al archivo nuevo
-  de 500K y volver a correr el perfilado y los cruces. Los resultados no se heredan.
-- **El repo del equipo**, con la arquitectura del emulador documentada y el esquema SQL.
-- El discurso completo del agente en `CAPA-CUALITATIVA.md`: ICP, dolor, futuro soñado, las 5
-  preguntas de discovery y las 6 objeciones con su desarme, por familia de producto. De ahí
-  sale el system prompt.
-- La spec del scrape del catálogo, con 22 URLs priorizadas.
+- **La tubería de datos, construida y probada.** ETL validado (`scripts/etl_afiliados.py`), esquema
+  Postgres, y el análisis de asociación cruzada. Ya reapuntada al archivo nuevo de 500K. El detalle
+  del método de análisis vive en [PROPENSION.md](PROPENSION.md).
+- **La app sobre Vocero (`app/`)**: web-chat en `/chat` + admin (`/inbox`, `/pipeline`) corriendo de
+  punta a punta con el cerebro stub. Gate verde (typecheck + lint + build + tests). Ver
+  [README](README.md).
+- El discurso completo del agente en [CEREBRO.md](CEREBRO.md) (capa cualitativa): ICP, dolor, futuro
+  soñado, las 5 preguntas de discovery y las 6 objeciones con su desarme. De ahí sale el
+  [SYSTEM-PROMPT.md](SYSTEM-PROMPT.md).
+- **El catálogo estructurado y su RAG**: scrape re-corrido con planes y precios reales; detalle en
+  [CEREBRO.md](CEREBRO.md).
 - **Vocero CRM** (MIT, Next.js 15 + Drizzle + Postgres) como base de la vista administrativa:
   bandeja en tiempo real, pipeline, toggle para que un humano retome, plantillas.
 
 ## No existe todavía
 
-- **El catálogo estructurado.** El scrape no se ha corrido, y es el insumo del RAG. Es el camino
-  crítico.
-- **El perfilado de la base nueva.** 500K filas con cuatro columnas en código griego. Sin esto no
-  se pueden escribir reglas.
-- **El diccionario de códigos.** Hay que pedírselo a la organización hoy mismo. Es un mensaje y
-  cambia por completo cuánta señal tenemos.
-- La vista cliente, que es lo único que el jurado recorre solo.
-- El motor de reglas `recomendar(perfil)` y su `reglas.json`.
+- **El perfilado de la base nueva** convertido en reglas: 500K filas con cuatro columnas en código
+  griego. El motor de reglas `recomendar(perfil)` y su `reglas.json` (frente de Luis, ver
+  [PROPENSION.md](PROPENSION.md)).
+- La web-chat sobre el diseño de Sarah (hoy UI placeholder en `/chat`).
+- La conexión de la app al cerebro real (`CEREBRO_MODE=external`).
+- El cierre completo probado de punta a punta (aceptación, confirmación, resumen).
 
 ## Prioridades, en orden
 
@@ -645,7 +599,8 @@ casi gratis del análisis que ya existe.
 
 ## Lo que falta definir
 
-**Los 4 contratos que bloquean el trabajo en paralelo** (ver Fase 0 de `PLAN-CONSTRUCCION.md`):
+**Los 4 contratos que bloquean el trabajo en paralelo** (ver Fase 0 en
+[ARQUITECTURA.md](ARQUITECTURA.md)):
 1. Cerebro ↔ perfil: cómo lee y escribe el cerebro el perfil por `id`.
 2. Canales ↔ cerebro: cómo cada canal invoca al cerebro con el `id`.
 3. `recomendar(perfil)`: qué recibe y qué devuelve, y la forma de `reglas.json`.
@@ -658,38 +613,32 @@ baja a diseño el momento de gemelos interactivo.
 priorizan en el demo.
 
 **Luis:** la caracterización de los códigos griegos por comportamiento y las reglas de propensión.
-Nota sobre el hash/rehash del análisis de `EMULADOR_ARQUITECTURA.md`: con un puñado de
-conversaciones en un demo, ese cache cuesta depuración y no compra nada que el jurado vea.
-Sugerencia de recalcular siempre y dejar el hash documentado como ruta de escalado.
 
 **Samuel:** el scaffold de las 3 vistas, los canales, y si el deploy va a Vercel con Supabase como
 Postgres (a verificar que el SSE de la bandeja aguante los límites de función) o a un VPS con Docker.
 
 ## Próximo paso
 
-1. Llevar al equipo la separación de reglas contra RAG de la Parte 4. Es la decisión que bloquea
-   todo lo demás.
-2. Congelar los 4 contratos.
-3. Correr el scrape del catálogo.
+1. Congelar los 4 contratos (Fase 0).
+2. Cerrar `reglas.json` (Luis) y conectar el cerebro real a la app (`CEREBRO_MODE=external`).
+3. Probar el camino feliz de [DEMO.md](DEMO.md) contra `match_catalogo` de punta a punta.
 
 ---
 
-## Otros documentos del proyecto
+## Mapa de documentos del proyecto
 
-- **`PLAN-CONSTRUCCION.md`** — las fases, quién hace qué y dónde queda cada salida. Es el que
-  responde "¿qué hago ahora?".
-- **`UX.md`** — para Sarah. Qué tiene que lograr la pantalla del usuario, el recorrido momento por
-  momento, las tres tarjetas interactivas, cómo se muestra el porqué, y la marca.
-- **`ANALISIS-PROPENSION.md`** — para Luis. Instrucciones del análisis: restricciones duras, lo que
-  ya se sabe para no repetirlo, las hipótesis a validar, y el contrato de `reglas.json`.
-- **`CAPA-CUALITATIVA.md`** — el discurso del agente: ICP, dolor, futuro soñado, las 5 preguntas de
-  discovery y las 6 objeciones con su desarme. De aquí sale el system prompt.
-- `EMULADOR_ARQUITECTURA.md` — esquema de datos y arquitectura del emulador, de Samuel. Vigente
-  salvo el punto de quién decide la recomendación, ver Parte 4.
-- `PLAN-CONSTRUCCION.md` — plan detallado: componentes, workstreams, decisiones con su
-  razonamiento completo.
-- `EQUIPO.md` — quién es quién y quién decide qué.
-- `PENDIENTES-DIA-1.md` — orden de trabajo del día 1 al 5.
-- `GUIA-ANALISIS-DATOS.md` — la guía de DuckDB para procesar la base de 500K.
-- `SPEC-SCRAPE-CATALOGO.md` — cómo se arma `catalogo-seguros.json`.
-- `DECISION-RETO.md` — por qué elegimos el reto 2. Histórico.
+- **[README.md](README.md)** — puerta de entrada: qué es, cómo se levanta, roadmap, equipo.
+- **[CLAUDE.md](CLAUDE.md)** — instrucciones del proyecto + el modelo de datos (tokens griegos,
+  decode direccional) + tabla de stack + decisiones pendientes.
+- **[ARQUITECTURA.md](ARQUITECTURA.md)** — arquitectura del sistema, esquema SQL, gobernanza de
+  datos/IA, y el plan de construcción por fases (quién hace qué y dónde queda cada salida).
+- **[CEREBRO.md](CEREBRO.md)** — el cerebro de punta a punta: cómo funciona en lenguaje llano, el
+  catálogo y el RAG, y la capa cualitativa (ICP, discovery, objeciones) de la que sale el prompt.
+- **[SYSTEM-PROMPT.md](SYSTEM-PROMPT.md)** — el system prompt del agente + su procedencia + el
+  registro del dojo. Artefacto vivo que consume el harness.
+- **[PROPENSION.md](PROPENSION.md)** — el frente de datos: restricciones, hipótesis, el contrato de
+  `reglas.json`, y la guía técnica de DuckDB.
+- **[DEMO.md](DEMO.md)** — el camino feliz de la demo y los escenarios A/B/C.
+- **[Manual de Marca Colsubsidio.md](Manual%20de%20Marca%20Colsubsidio.md)** — reconstrucción de la
+  marca (colores, logo, tono).
+- **[CHANGELOG.md](CHANGELOG.md)** — historial de cambios.

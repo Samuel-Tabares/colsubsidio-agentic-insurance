@@ -2,11 +2,14 @@
 
 **Para:** Luis, y para el Claude Code que trabaje con él en este frente.
 **Entregable:** `reglas.json`, más el documento que justifica cada regla.
-**Insumo:** el CSV de ~500.000 afiliados que la organización entregó el 23 de julio.
-**Actualizado:** 2026-07-23, tras el cambio de base. + 2026-07-24 (datos simulados autorizados, dos cerebros, entrega a Supabase). Ver "EMPIEZA AQUÍ".
+**Insumo:** la base de ~500.000 afiliados que la organización entregó el 23 de julio
+(`Usos_Productos_Afiliados_SIN_ID.xlsx`, sin PII, versionada en git; ver la nota del pipeline en
+[CLAUDE.md](CLAUDE.md)).
+**Actualizado:** 2026-07-25. Ver "EMPIEZA AQUÍ".
 
 Si eres un agente leyendo esto: lee el documento completo antes de escribir código. Las secciones
-2, 3 y 4 contienen restricciones que invalidan varios enfoques que parecen obvios.
+2, 3 y 4 contienen restricciones que invalidan varios enfoques que parecen obvios. La guía técnica
+paso a paso (DuckDB) está en el **Anexo** al final.
 
 ---
 
@@ -67,8 +70,8 @@ este frente vive de correr conteos reales, no de estimarlos.
 ### Herramienta
 
 DuckDB para ingestar y cruzar los ~500K (no cabe cómodo en Excel), pandas para el reetiquetado
-categórico. Guía paso a paso con parámetros y anti-patrones: `GUIA-ANALISIS-DATOS.md`. La skill
-`tabular-data-analysis` es el playbook.
+categórico. Guía paso a paso con parámetros y anti-patrones: el **Anexo** al final de este doc. La
+skill `tabular-data-analysis` es el playbook.
 
 ### Dónde encaja tu trabajo: los dos cerebros
 
@@ -87,7 +90,8 @@ jurado):
 
 Tu `reglas.json` corre dentro de `recomendar(perfil)`, sobre un perfil que es PARTE dato (Supabase)
 + PARTE conversación. Diseña las reglas para que **degraden** (§2.4): muchas variables llegan vacías
-y se llenan en el chat, en runtime.
+y se llenan en el chat, en runtime. El flujo del cerebro y `match_catalogo` están en
+[CEREBRO.md](CEREBRO.md).
 
 ### Qué tienes que entregarle a Jhon para montar Supabase
 
@@ -156,11 +160,17 @@ Ese es el gate que este análisis tiene que aprobar. Todo lo demás es secundari
 - **Las reglas que salen de este análisis deciden la FAMILIA de seguro** (vida, salud, accidentes,
   hogar, viajes, mascotas, movilidad) y producen la justificación en texto.
 - **El RAG del catálogo recupera el PRODUCTO concreto** dentro de esa familia, con coberturas,
-  exclusiones y condiciones. Ese frente es de Jhon.
+  exclusiones y condiciones. Ese frente es de Jhon ([CEREBRO.md](CEREBRO.md)).
 - **El LLM conversa y narra.** No decide familia ni producto ni prima.
 
 Concretamente: este análisis **no** produce un modelo que puntúe. Produce un archivo de reglas
 legibles que cualquiera puede abrir y discutir.
+
+> ⚠️ **Desajuste de familias a resolver:** las familias que declara §6 (`vida, salud, accidentes,
+> hogar, viajes, mascotas, movilidad`) no coinciden con las reales del catálogo (`familiares,
+> vehiculos, deudores-financieros, mascotas, hogar`). `recomendar()` necesita un mapeo
+> necesidad-fina→familia-de-catálogo, o `match_catalogo` no encontrará nada. Ver
+> [CEREBRO.md](CEREBRO.md), "Las familias".
 
 ---
 
@@ -261,8 +271,8 @@ describimos por su comportamiento medido".
 ### El decode direccional de Samuel (pista, no prueba)
 
 Samuel ya alineó los tokens con las categorías de la base anterior por frecuencia: `LAMBDA` ≈ sin
-grupo familiar (57%), `RHO` ≈ monoparental (24%), `EPSILON` ≈ familia nuclear (9%), etc. Está en el
-`CLAUDE.md` del repo, documentado como inferencia direccional. **Es una pista para orientarse, no
+grupo familiar (57%), `RHO` ≈ monoparental (24%), `EPSILON` ≈ familia nuclear (9%), etc. Está en
+[CLAUDE.md](CLAUDE.md), documentado como inferencia direccional. **Es una pista para orientarse, no
 un hecho.** Colsubsidio confirmó que el codebook real no llega, así que esto **nunca** se usa para
 etiquetar en la pantalla del usuario. Sirve para priorizar qué medir, no para afirmar.
 
@@ -282,11 +292,9 @@ corregirlas o descartarlas.**
 - ⚠️ `PISCILAGO` está **muerta**: 100% NO en toda la base nueva. Era la señal de accidentes;
   esa familia hay que buscarla por edad, ingreso o conversación.
 - `RANGO_SALARIAL` → **capacidad de pago.** No define familia, define qué prima tiene sentido
-  ofrecer. Es la variable nueva y es la más valiosa que entró. Actualización 2026-07-25: el
-  catálogo de Jhon ya tiene primas reales para calibrar contra (antes no había ninguna). El piso es
-  $12.000/mes (vida, Pan American Life) y el techo con precio publicado es $96.600/mes (medicina
-  prepagada mascotas, VetPlus perros). Ver "Qué tienes que entregarle a Jhon" más abajo,
-  `capacidad_pago`.
+  ofrecer. Es la variable nueva y es la más valiosa que entró. El catálogo de Jhon ya tiene primas
+  reales para calibrar contra: piso $12.000/mes (vida, Pan American Life), techo publicado
+  $96.600/mes (medicina prepagada mascotas, VetPlus perros). Ver `capacidad_pago` en §6.
 - `RANGO_EDAD` → modula familia y monto.
 
 **Rotas por la anonimización, se recuperan por conversación:**
@@ -300,9 +308,9 @@ pudieras trabajar por un mes, ¿de qué vivirías?"*.
 frente al dato, que es exactamente la arquitectura que ya habíamos elegido. Los datos siguen
 definiendo el mapa, solo que ahora el mapa tiene menos etiquetas.
 
-Contexto completo de cada perfil (dolor real, lenguaje, objeciones) en `CAPA-CUALITATIVA.md`.
-Ese documento tiene líneas de "señal en la data" que quedaron obsoletas con el cambio; el resto
-sigue siendo válido.
+Contexto completo de cada perfil (dolor real, lenguaje, objeciones) en [CEREBRO.md](CEREBRO.md),
+Parte 3 (capa cualitativa). Ese documento tiene líneas de "señal en la data" que quedaron obsoletas
+con el cambio; el resto sigue siendo válido.
 
 ---
 
@@ -323,7 +331,7 @@ archivo: los datos reales traen erratas, y si la regla no escribe el valor tal c
 **Confirmar que la base nueva no viene filtrada**, como sí lo estaba la muestra de 75 de la base
 anterior.
 
-**Paso 3. Caracterización de los códigos griegos.** El paso de la sección 3, camino 3. Es lo que
+**Paso 3. Caracterización de los códigos griegos.** El paso de la sección 3, camino 2. Es lo que
 convierte cuatro columnas inútiles en cuatro columnas usables.
 
 **Paso 4. Tamaños de segmento.** Para cada combinación que vaya a ser una regla, el conteo absoluto
@@ -348,7 +356,7 @@ score.
 
 **Paso 9. Probar.** Ver la sección 7.
 
-Guía técnica de DuckDB paso a paso, con parámetros y anti-patrones: `GUIA-ANALISIS-DATOS.md`.
+Guía técnica de DuckDB paso a paso, con parámetros y anti-patrones: el **Anexo** al final.
 
 ---
 
@@ -465,3 +473,252 @@ afirmar, y qué se decidió no afirmar. Esa honestidad juega a favor, no en cont
 criterio es medido y no inventado, que es exactamente lo que el gate del jurado busca.
 
 Es el documento que el jurado puede pedir. Que se pueda leer sin correr nada.
+
+---
+
+# ANEXO — Guía técnica de DuckDB (base nueva de 500K)
+
+Guía autocontenida para procesar la base y derivar el artefacto. Se rescató de la guía original
+(escrita para la base vieja de 1,56M con PII) y se **actualizó a la base nueva**: ya no hay columna
+`NOMBRE_COMPLETO` que descartar (la fuente no trae PII), las columnas son las 15 nuevas, y cuatro de
+ellas vienen en código griego (ver §3). Herramientas: DuckDB para leer, perfilar y agregar; pandas
+solo para el tramo final y para exportar. Todo LOCAL, cualquier portátil moderno la procesa.
+
+## Preparación
+
+```bash
+pip install duckdb pandas
+python -c "import duckdb, pandas; print('duckdb', duckdb.__version__, '| pandas', pandas.__version__)"
+```
+
+Estructura sugerida:
+
+```
+scripts/
+  01_ingesta.py
+  02_perfilado.py
+  02b_limpieza.py
+  03_analisis.py
+  04_artefacto.py
+salida/
+  artefacto.json         <- va a Git (no contiene PII)
+analisis.duckdb          <- base local de trabajo (NO va a Git)
+```
+
+Agrega al `.gitignore`: `*.duckdb`. (La base fuente de 500K ya no trae PII y está versionada; el
+único artefacto local que no va a Git es la base de trabajo de DuckDB.)
+
+## Paso 1 · Primer contacto, sin abrir el archivo
+
+**Nunca lo abras en Excel.** El límite de Excel es 1.048.576 filas y la base las supera de sobra si
+la exportas a CSV.
+
+```bash
+ls -lh data/afiliados.csv
+wc -l data/afiliados.csv
+head -n 3 data/afiliados.csv
+```
+
+Qué verificar: que el separador sea `;`, que el encabezado tenga las 15 columnas esperadas, y si el
+archivo empieza con caracteres raros antes de `SERIE`, tiene BOM (se resuelve con `encoding` en el
+paso 2).
+
+## Paso 2 · Ingesta
+
+`scripts/01_ingesta.py`:
+```python
+import duckdb
+
+CSV = "data/afiliados.csv"
+DB  = "analisis.duckdb"
+
+con = duckdb.connect(DB)
+
+# all_varchar=true: no dejamos que adivine tipos todavía. Primero miramos qué hay.
+# Selección explícita de columnas (sin SELECT *): documenta el esquema esperado y
+# falla ruidoso si el archivo cambió de forma.
+con.execute(f"""
+CREATE OR REPLACE TABLE afiliados AS
+SELECT SERIE, GENERO, RANGO_EDAD, RANGO_SALARIAL, CATEGORIA, SEGMENTO_GRUPO_FAMILIAR,
+       SEGMENTO_POBLACIONAL, PIRAMIDE_NUEVA, EMPRESA_FOCO, CIUDAD_AFILIADO,
+       HOTELES, PISCILAGO, DROGUERIA, AGENCIAS, VIVIENDA
+FROM read_csv(
+    '{CSV}',
+    delim = ';',
+    header = true,
+    all_varchar = true
+    -- , encoding = 'utf-8'   # descomenta si hay BOM/encoding raro (utf-8, utf-16, latin-1)
+);
+""")
+
+total = con.execute("SELECT count(*) FROM afiliados").fetchone()[0]
+cols  = [r[0] for r in con.execute("DESCRIBE afiliados").fetchall()]
+print(f"Filas cargadas: {total:,}")
+print(f"Columnas ({len(cols)}): {cols}")
+con.close()
+```
+
+## Paso 3 · Perfilado
+
+**Objetivo:** conocer el vocabulario real de cada columna y cuántos nulos/vacíos hay. Nunca asumas
+que la documentación del dataset es correcta.
+
+`scripts/02_perfilado.py`:
+```python
+import duckdb
+
+con = duckdb.connect("analisis.duckdb")
+total = con.execute("SELECT count(*) FROM afiliados").fetchone()[0]
+cols  = [r[0] for r in con.execute("DESCRIBE afiliados").fetchall()]
+print(f"TOTAL DE FILAS: {total:,}\n")
+
+for c in cols:
+    distintos = con.execute(f'SELECT count(DISTINCT "{c}") FROM afiliados').fetchone()[0]
+    vacios = con.execute(f'''
+        SELECT count(*) FROM afiliados
+        WHERE "{c}" IS NULL OR trim("{c}") = ''
+    ''').fetchone()[0]
+    print(f"=== {c} ===")
+    print(f"  distintos: {distintos} | vacíos: {vacios:,} ({100*vacios/total:.1f}%)")
+    if distintos > 50:
+        print("  (alta cardinalidad, probablemente identificador)\n")
+        continue
+    filas = con.execute(f'''
+        SELECT "{c}" AS valor, count(*) AS n
+        FROM afiliados
+        WHERE "{c}" IS NOT NULL AND trim("{c}") <> ''
+        GROUP BY 1 ORDER BY n DESC
+    ''').fetchall()
+    for valor, n in filas:
+        print(f"    {valor!r}: {n:,} ({100*n/total:.1f}%)")
+    print()
+con.close()
+```
+
+Qué revisar: el vocabulario exacto de cada columna (anótalo, las reglas usan los strings tal cual,
+erratas incluidas); el % de vacíos (`CIUDAD_AFILIADO` sale alto ~58%); las columnas constantes
+(`PISCILAGO` sale 100% NO = muerta); y confirmar que la base nueva **no** viene filtrada como la
+muestra de 75 de la base vieja.
+
+## Paso 4 · Limpieza
+
+`scripts/02b_limpieza.py`:
+```python
+import duckdb
+
+con = duckdb.connect("analisis.duckdb")
+
+# Vista limpia: espacios recortados, cadenas vacías -> NULL.
+# NULL y '' son distintos en SQL; mezclarlos causa bugs silenciosos.
+con.execute("""
+CREATE OR REPLACE VIEW v_afiliados AS
+SELECT
+    SERIE,
+    nullif(trim(GENERO), '')                  AS genero,
+    nullif(trim(RANGO_EDAD), '')              AS rango_edad,
+    nullif(trim(RANGO_SALARIAL), '')          AS rango_salarial,
+    nullif(trim(CATEGORIA), '')               AS categoria,          -- código griego
+    nullif(trim(SEGMENTO_GRUPO_FAMILIAR), '') AS segmento_familiar,  -- código griego
+    nullif(trim(SEGMENTO_POBLACIONAL), '')    AS segmento_poblacional,-- código griego
+    nullif(trim(PIRAMIDE_NUEVA), '')          AS piramide,           -- código griego
+    nullif(trim(EMPRESA_FOCO), '')            AS empresa_foco,       -- seudónimo EMP_00000X
+    nullif(trim(CIUDAD_AFILIADO), '')         AS ciudad,
+    (upper(trim(HOTELES))   = 'SI') AS m_hoteles,
+    (upper(trim(PISCILAGO)) = 'SI') AS m_piscilago,
+    (upper(trim(DROGUERIA)) = 'SI') AS m_drogueria,
+    (upper(trim(AGENCIAS))  = 'SI') AS m_agencias,
+    (upper(trim(VIVIENDA))  = 'SI') AS m_vivienda
+FROM afiliados;
+""")
+print(con.execute("SELECT count(*) FROM v_afiliados").fetchone()[0], "filas en la vista limpia")
+con.close()
+```
+
+Decisiones de limpieza: **no se borran filas con nulos** (un afiliado sin ciudad sigue siendo
+válido; borrarlo sesga los tamaños de segmento); **no se "corrigen" erratas** de los datos (se usan
+tal cual, corregirlas obliga a mantener la corrección en todos lados); **las marcas se vuelven
+booleanos** para poder contarlas y sumarlas. Las cuatro columnas griegas se mantienen como texto:
+no se traducen (§2.3).
+
+## Paso 5 · Análisis y cruces
+
+`scripts/03_analisis.py` (los cruces que sustentan el "por qué" ante el jurado):
+```python
+import duckdb
+con = duckdb.connect("analisis.duckdb")
+
+def mostrar(titulo, sql):
+    print(f"\n{'='*60}\n{titulo}\n{'='*60}")
+    print(con.execute(sql).df().to_string(index=False))
+
+# 1. Tamaño de cada segmento familiar (código griego, la palanca principal)
+mostrar("SEGMENTO FAMILIAR (código)", """
+SELECT segmento_familiar, count(*) AS afiliados,
+       round(100.0*count(*)/sum(count(*)) OVER (), 1) AS pct
+FROM v_afiliados GROUP BY 1 ORDER BY afiliados DESC
+""")
+
+# 2. Penetración de cada marca de consumo
+mostrar("MARCAS DE CONSUMO", """
+SELECT 'drogueria' AS marca, sum(m_drogueria::INT) AS si,
+       round(100.0*sum(m_drogueria::INT)/count(*),1) AS pct FROM v_afiliados
+UNION ALL SELECT 'hoteles',   sum(m_hoteles::INT),   round(100.0*sum(m_hoteles::INT)/count(*),1)   FROM v_afiliados
+UNION ALL SELECT 'piscilago', sum(m_piscilago::INT), round(100.0*sum(m_piscilago::INT)/count(*),1) FROM v_afiliados
+UNION ALL SELECT 'agencias',  sum(m_agencias::INT),  round(100.0*sum(m_agencias::INT)/count(*),1)  FROM v_afiliados
+UNION ALL SELECT 'vivienda',  sum(m_vivienda::INT),  round(100.0*sum(m_vivienda::INT)/count(*),1)  FROM v_afiliados
+ORDER BY si DESC
+""")
+
+# 3. Caracterización por comportamiento: cada código griego x marcas (§3, camino 2)
+mostrar("SEGMENTO FAMILIAR (código) x MARCAS (% que compró cada servicio)", """
+SELECT segmento_familiar, count(*) AS n,
+       round(100.0*avg(m_drogueria::INT),1) AS pct_drogueria,
+       round(100.0*avg(m_vivienda::INT),1)  AS pct_vivienda,
+       round(100.0*avg(m_hoteles::INT),1)   AS pct_hoteles,
+       round(100.0*avg(m_agencias::INT),1)  AS pct_agencias
+FROM v_afiliados GROUP BY 1 ORDER BY n DESC
+""")
+
+# 4. Capacidad de pago (variable nueva) x marcas
+mostrar("RANGO SALARIAL x DROGUERIA", """
+SELECT rango_salarial, count(*) AS n,
+       round(100.0*avg(m_drogueria::INT),1) AS pct_drogueria
+FROM v_afiliados GROUP BY 1 ORDER BY n DESC
+""")
+
+# 5. Solape PIRAMIDE_NUEVA x EMPRESA_FOCO (§5 paso 7)
+mostrar("PIRAMIDE (código) x EMPRESA_FOCO", """
+SELECT piramide, empresa_foco, count(*) AS n
+FROM v_afiliados GROUP BY 1,2 ORDER BY n DESC
+""")
+con.close()
+```
+
+Cómo leer: **reporta siempre el tamaño absoluto junto al porcentaje.** El tipo de frase que debe
+salir: *"de los N afiliados en el segmento X, el 62% compra en droguerías, contra 31% del promedio
+de la base"*. Guarda estos números: son munición para el pitch y respaldo conversacional del agente
+(vía el `respaldo` de cada regla, §6).
+
+## Paso 6 · Verificación final
+
+```bash
+grep -i "nombre" salida/reglas.json          # (1) no debe devolver nada (no hay PII)
+ls -lh salida/reglas.json                     # (2) pesa poco (KB, no MB)
+python -c "import json; d=json.load(open('salida/reglas.json', encoding='utf-8')); print('OK', list(d.keys()))"  # (3) JSON válido
+git status --porcelain | grep -E "\.duckdb"   # (4) la base de trabajo NO está en Git
+```
+
+Además de la verificación de §7 (explicabilidad, degradación, no traducir tokens).
+
+## Errores comunes
+
+- **Abrir el CSV en Excel.** Trunca en silencio arriba de ~1M filas.
+- **Confundir NULL con cadena vacía.** En SQL son distintos; por eso `nullif(trim(col), '')`.
+- **Borrar filas con nulos.** Sesga los tamaños de segmento. Se conservan y las reglas manejan la
+  ausencia (§2.4).
+- **Reportar porcentajes sin el tamaño absoluto.** Un 80% sobre 500 personas no es un hallazgo.
+- **Traducir un código griego a una etiqueta como si fuera un hecho.** Prohibido (§2.3), salvo bajo
+  la etiqueta explícita de SIMULADO.
+- **Tratar el vacío como categoría al cruzar.** Excluir por par las filas sin alguno de los dos
+  campos, o inflas la asociación (§5, paso 5).
+- **Intentar entrenar un modelo predictivo.** No hay variable objetivo (§2.1). Es reglas, a propósito.

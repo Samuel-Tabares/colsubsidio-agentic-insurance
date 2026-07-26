@@ -7,8 +7,7 @@ un asesor. Conversa, descubre su necesidad real, le recomienda un seguro concret
 Colsubsidio, y le muestra **por qué ese y no otro**.
 
 - **Demo:** _(pendiente de desplegar)_
-- **Reto completo:** [RETO_2_SEGUROS.md](RETO_2_SEGUROS.md)
-- **Contexto y decisiones:** [BRIEF.md](BRIEF.md)
+- **Reto, contexto y decisiones:** [BRIEF.md](BRIEF.md) (incluye el brief oficial verbatim)
 - **Catálogo de seguros Colsubsidio:** https://www.colsubsidio.com/seguros
 
 ---
@@ -105,12 +104,11 @@ Detalle del modelo de datos en [CLAUDE.md](CLAUDE.md).
 
 El recorrido del usuario: llega → conversa (5 preguntas de discovery, una por turno) → recibe una
 recomendación con su razón visible → compara opciones → ajusta coberturas → ve las exclusiones →
-cierra con aceptación, confirmación y resumen. Arquitectura completa en [BRIEF.md](BRIEF.md) y el
-plan de construcción en [PLAN-CONSTRUCCION.md](PLAN-CONSTRUCCION.md).
+cierra con aceptación, confirmación y resumen. Contexto completo en [BRIEF.md](BRIEF.md) y la
+arquitectura + plan de construcción en [ARQUITECTURA.md](ARQUITECTURA.md).
 
-Detalle de cada pieza del cerebro, en lenguaje llano, con ejemplo de punta a punta:
-[COMO-FUNCIONA-EL-CEREBRO.md](COMO-FUNCIONA-EL-CEREBRO.md). De dónde sale el catálogo, cómo se
-construyó el RAG en Supabase y sus caveats de calidad: [CATALOGO-Y-RAG.md](CATALOGO-Y-RAG.md).
+Detalle de cada pieza del cerebro (en lenguaje llano, con ejemplo de punta a punta), de dónde sale
+el catálogo y cómo se construyó el RAG en Supabase con sus caveats: [CEREBRO.md](CEREBRO.md).
 
 ---
 
