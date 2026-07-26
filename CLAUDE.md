@@ -57,7 +57,8 @@ tubería de ingesta de canal y un adaptador de IA. El ETL de `scripts/` (Python)
 otro frente.
 
 Se construyó insertando tres seams, no reescribiendo:
-- **Cerebro** (`app/src/lib/cerebro/`): el RAG+agente de Jhon vive en OTRO repo y se llama por HTTP.
+- **Cerebro** (`app/src/lib/cerebro/`): el RAG+agente de Jhon vive **también en este repo**
+  bajo `cerebro/` (servicio Next aparte, deploy propio) y se llama por HTTP.
   `decidirTurno(req)` reemplaza el paso de decisión del LLM nativo en `app/src/server/ai/pipeline.ts`.
   Modo por env **`CEREBRO_MODE`**: `stub` (recorrido guionizado local, demo hoy) · `external`
   (HTTP a `CEREBRO_URL`) · `vocero` (LLM nativo). Contrato en `app/src/lib/cerebro/types.ts`. El
@@ -67,7 +68,14 @@ Se construyó insertando tres seams, no reescribiendo:
   `web`. Endpoints públicos sin login `/api/channels/web/{messages,session,stream,budget}` (arranque
   en frío + handoff por id + presupuesto del slider). SSE emite `message.new` y `analisis.updated`
   (tags/ranking en vivo).
-- **Funnel de seguros** (`app/src/lib/funnel.ts`), sembrado por org.
+- **Funnel de seguros** (`app/src/lib/funnel.ts`), sembrado por org. Cada etapa
+  declara `duenio` (`agente` | `humano`) y `avance`: el agente maneja **Prospecto →
+  Análisis → Cotización / negociación → Cierre ganado**, más **Cierre perdido** desde
+  cualquier punto; *En suscripción* y *Póliza emitida* son manuales. `puedeMoverAgente()`
+  lo hace cumplir en el pipeline: nunca hacia atrás, nunca a una etapa manual, y nunca
+  saca un lead que una persona ya movió a mano. Antes la fase salía solo de qué tool
+  llamó el cerebro, así que un lead en negociación caía de vuelta a "Análisis" cada vez
+  que se reevaluaba la recomendación.
 
 **Estado:** web-chat en `/chat` con el **diseño real de Sarah** ya portado (fork de Lovable en
 `frontend/web-chat/`, superficie `app/src/components/surface-asegura.tsx` + hook `use-asegura-channel`) y
