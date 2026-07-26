@@ -12,19 +12,22 @@ export const dynamic = "force-dynamic";
 const query = z.object({
   id: z.string().min(1),
   canal: z.enum(["whatsapp", "web"]).default("web"),
+  serie: z.coerce.number().int().positive().optional(),
 });
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const serieParam = url.searchParams.get("serie");
   const parsed = query.safeParse({
     id: url.searchParams.get("id") ?? "",
     canal: url.searchParams.get("canal") ?? "web",
+    serie: serieParam ?? undefined,
   });
   if (!parsed.success) {
     return apiError(422, "invalid_query", "Falta el parámetro id");
   }
   try {
-    const session = await ensureSession(parsed.data.id, parsed.data.canal);
+    const session = await ensureSession(parsed.data.id, parsed.data.canal, parsed.data.serie);
     const mensajes = await getHistory(session.conversationId);
     return Response.json({
       id: session.clienteId,

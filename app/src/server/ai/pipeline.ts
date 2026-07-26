@@ -73,7 +73,12 @@ async function executeTurn(conversationId: string): Promise<void> {
     entry.running = false;
     if (entry.pending) {
       entry.pending = false;
-      void executeTurn(conversationId);
+      // Pasa de nuevo por el debounce de scheduleAgentTurn (no re-ejecuta al
+      // instante): si llegan varios mensajes casi simultáneos mientras el
+      // turno anterior seguía en vuelo, se agrupan en un solo turno de
+      // seguimiento en vez de encadenar respuestas casi idénticas una detrás
+      // de otra (bug real observado: doble saludo al escribir rápido).
+      scheduleAgentTurn(conversationId);
     } else {
       map.delete(conversationId);
     }
@@ -246,6 +251,7 @@ async function runCerebroTurn(
       id: schema.contact.id,
       phone: schema.contact.phone,
       analisis: schema.contact.analisis,
+      perfilCrudo: schema.contact.perfilCrudo,
     })
     .from(schema.contact)
     .where(eq(schema.contact.id, conversation.contactId))
@@ -257,6 +263,7 @@ async function runCerebroTurn(
     clienteId: contact.phone,
     canal: conversation.channel,
     historial,
+    perfil: (contact.perfilCrudo as Record<string, unknown> | null) ?? null,
     presupuesto: conversation.presupuesto ?? undefined,
   });
   if (!result.ok) {

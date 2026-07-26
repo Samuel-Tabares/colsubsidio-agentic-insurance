@@ -37,15 +37,24 @@ export function SurfaceAsegura() {
     if (cierre) setScreen("s2");
   }, [cierre]);
 
-  const startIfEmpty = () => {
-    if (ch.messages.length === 0) void ch.send("Hola, quiero asesoría");
+  // Entrar (por cualquiera de los dos caminos de S0) siempre arranca una
+  // conversación nueva de verdad — antes reutilizaba indefinidamente el id
+  // guardado en localStorage sin ninguna forma de reiniciar.
+  const onEnterColsubsidio = () => {
+    ch.startNew();
+    setScreen("s1");
+  };
+  const onEnterSerie = (serie: string) => {
+    ch.startNew(serie);
     setScreen("s1");
   };
 
   return (
     <div className="min-h-screen bg-warm-bg font-body text-brand-graphite selection:bg-brand-yellow/40">
       <SiteHeader />
-      {screen === "s0" && <S0Entry onEnter={startIfEmpty} />}
+      {screen === "s0" && (
+        <S0Entry onEnterColsubsidio={onEnterColsubsidio} onEnterSerie={onEnterSerie} />
+      )}
       {screen === "s1" && <S1Conversation ch={ch} />}
       {screen === "s2" && <S2Close cierre={cierre} resumen={ch.analisis?.resumen} onRestart={() => setScreen("s1")} />}
     </div>
@@ -91,8 +100,14 @@ function Logo() {
 
 /* --------------------------------- S0 ------------------------------------- */
 
-function S0Entry({ onEnter }: { onEnter: () => void }) {
-  const [email, setEmail] = useState("");
+function S0Entry({
+  onEnterColsubsidio,
+  onEnterSerie,
+}: {
+  onEnterColsubsidio: () => void;
+  onEnterSerie: (serie: string) => void;
+}) {
+  const [serie, setSerie] = useState("");
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-16 md:px-8 md:py-24">
       <div className="grid items-center gap-12 md:grid-cols-2">
@@ -139,12 +154,12 @@ function S0Entry({ onEnter }: { onEnter: () => void }) {
             </div>
 
             <p className="mb-6 text-sm leading-relaxed text-brand-graphite/80">
-              Si ya tienes cuenta Colsubsidio, entra con un click. Si no, déjanos tu correo — no
-              llenamos formularios.
+              Si ya tienes cuenta Colsubsidio, entra con un click. Si tienes tu número de serie de
+              afiliado a la mano, escríbelo abajo y cargamos tu situación real.
             </p>
 
             <button
-              onClick={onEnter}
+              onClick={onEnterColsubsidio}
               className="mb-3 w-full rounded-2xl bg-brand-blue px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 transition-transform hover:scale-[1.01]"
             >
               Entrar con mi cuenta Colsubsidio
@@ -158,21 +173,24 @@ function S0Entry({ onEnter }: { onEnter: () => void }) {
 
             <div className="flex items-center gap-2 rounded-2xl border border-brand-graphite/15 bg-warm-bg px-4 py-2.5 focus-within:border-brand-blue/50">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu correo aquí"
+                type="text"
+                inputMode="numeric"
+                value={serie}
+                onChange={(e) => setSerie(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && serie && onEnterSerie(serie)}
+                placeholder="Tu número de serie de afiliado"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-brand-graphite/40"
               />
               <button
-                onClick={onEnter}
-                className="rounded-xl bg-brand-yellow px-4 py-2 text-xs font-bold text-brand-graphite transition-transform hover:scale-[1.03]"
+                onClick={() => serie && onEnterSerie(serie)}
+                disabled={!serie}
+                className="rounded-xl bg-brand-yellow px-4 py-2 text-xs font-bold text-brand-graphite transition-transform hover:scale-[1.03] disabled:opacity-40"
               >
                 Empezar
               </button>
             </div>
             <p className="mt-4 text-[11px] text-brand-graphite/50">
-              Solo lo usaremos para guardar tu conversación. Nada de spam ni llamadas sorpresa.
+              Solo lo usamos para cargar tu situación real. Nada de spam ni llamadas sorpresa.
             </p>
           </div>
         </div>
@@ -231,9 +249,9 @@ function S1Conversation({ ch }: { ch: Channel }) {
   };
 
   return (
-    <main className="mx-auto grid max-w-[1440px] gap-6 px-4 pb-8 pt-6 md:px-8 lg:grid-cols-12 lg:gap-8">
-      {/* LEFT */}
-      <aside className="animate-in flex flex-col gap-6 lg:col-span-3">
+    <main className="mx-auto grid max-w-[1440px] gap-6 px-4 pb-8 pt-6 md:px-8 lg:h-[calc(100vh-4rem)] lg:grid-cols-12 lg:gap-8">
+      {/* LEFT — sticky mientras el chat central scrollea, borde de contraste */}
+      <aside className="animate-in flex flex-col gap-6 lg:col-span-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-r lg:border-brand-graphite/10 lg:pr-6">
         <div>
           <h2 className="font-display text-2xl font-bold text-brand-blue">Siempre pensando en ti</h2>
           <p className="mt-1 text-xs text-brand-graphite/60">
@@ -343,8 +361,11 @@ function S1Conversation({ ch }: { ch: Channel }) {
         />
       </section>
 
-      {/* RIGHT */}
-      <aside className="animate-in flex flex-col gap-5 lg:col-span-3" style={{ animationDelay: "150ms" }}>
+      {/* RIGHT — sticky mientras el chat central scrollea, borde de contraste */}
+      <aside
+        className="animate-in flex flex-col gap-5 lg:col-span-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-l lg:border-brand-graphite/10 lg:pl-6"
+        style={{ animationDelay: "150ms" }}
+      >
         <div>
           <h2 className="font-display text-xl font-bold text-brand-graphite">Este seguro es para ti</h2>
           <p className="mt-1 text-xs text-brand-graphite/60">

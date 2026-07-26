@@ -52,7 +52,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 function bloquePerfil(afiliado: AfiliadoRaw | null): string {
   if (!afiliado) return "PERFIL: no resuelto todavía (sin serie confirmada en esta conversación).";
   return [
-    "PERFIL (ya resuelto, no lo vuelvas a pedir):",
+    "PERFIL (ya resuelto): identidad confirmada. NUNCA preguntes el número de serie, ni siquiera en el primer mensaje de la conversación.",
     JSON.stringify(
       {
         rango_edad: afiliado.rango_edad,
@@ -83,6 +83,14 @@ export interface TurnoResultado {
    * el self-check (verificar que el agente sí usó recomendar_seguro y no
    * decidió la familia por su cuenta). */
   toolsUsed: string[];
+  /** Tool + resultado crudo, para asertar contenido real (ej. que buscar_producto
+   * trajo productos de verdad, no vacío). */
+  toolResults: { nombre: string; resultado: unknown }[];
+  /** Modelo real reportado por OpenAI y tokens consumidos (suma de todas las
+   * rondas del loop) — prueba dura de que hubo una llamada de red real,
+   * no un fixture. */
+  modelo: string | null;
+  tokensTotal: number;
 }
 
 function openaiClient(): OpenAI {
@@ -91,7 +99,20 @@ function openaiClient(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
+const PREGUNTA_SERIE =
+  "Para ver tu situación real necesito tu número de serie de afiliado, ¿lo tienes a la mano?";
+
 export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
+  // Turno 1 sin perfil resuelto: pregunta de identidad determinista, no
+  // depende de que el LLM siga la instrucción al pie de la letra. Hallazgo
+  // real probando el flujo (ronda de dojo, gpt-4o-mini): ~1 de cada 3 veces
+  // se saltaba la pregunta e iba directo al micro-tutor pese a la
+  // instrucción explícita del prompt. Turnos siguientes sin perfil sí pasan
+  // por el LLM (la regla de "nunca insistir dos veces" necesita criterio).
+  if (!input.perfil && input.historial.length <= 1) {
+    return { texto: PREGUNTA_SERIE, toolsUsed: [], toolResults: [], modelo: null, tokensTotal: 0 };
+  }
+
   const client = openaiClient();
 
   const system = [SYSTEM_PROMPT_BASE, bloquePerfil(input.perfil), `CANAL: ${input.canal}`].join(
@@ -109,14 +130,34 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
   ];
 
   const toolsUsed: string[] = [];
+  const toolResults: { nombre: string; resultado: unknown }[] = [];
+  let modelo: string | null = null;
+  let tokensTotal = 0;
+
+  // Gate de gobernanza (GOBERNANZA.md, "System 2 by design"): la FAMILIA la
+  // deciden las reglas de `reglas.json`, nunca la intuición del modelo.
+  // Con perfil resuelto y al menos una respuesta de discovery, se FUERZA la
+  // llamada a `recomendar_seguro` en la primera ronda en vez de confiar en
+  // que el modelo la invoque. Hallazgo real probando el flujo: gpt-4o-mini
+  // narró "creo que un seguro de vida es lo que más te podría interesar" sin
+  // llamar la tool — exactamente la violación que el brief marca como línea
+  // roja. Forzarla es seguro: si ninguna regla dispara, `recomendar()`
+  // devuelve null y el agente sigue en discovery (comportamiento correcto).
+  const respuestasCliente = input.historial.filter((m) => m.rol === "cliente").length;
+  const forzarRecomendar = !!input.perfil && respuestasCliente >= 2;
 
   for (let ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
+    const debeForzar = ronda === 0 && forzarRecomendar;
     const resp = await client.chat.completions.create({
       model: MODEL,
       messages,
       tools: TOOLS,
-      tool_choice: "auto",
+      tool_choice: debeForzar
+        ? { type: "function", function: { name: "recomendar_seguro" } }
+        : "auto",
     });
+    modelo = resp.model;
+    tokensTotal += resp.usage?.total_tokens ?? 0;
     const choice = resp.choices[0];
     const msg = choice.message;
 
@@ -124,6 +165,9 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
       return {
         texto: msg.content?.trim() || "Dame un segundo, estoy verificando esto con calma.",
         toolsUsed,
+        toolResults,
+        modelo,
+        tokensTotal,
       };
     }
 
@@ -132,6 +176,7 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
     for (const call of msg.tool_calls) {
       toolsUsed.push(call.function.name);
       const resultado = await ejecutarTool(call, input.perfil);
+      toolResults.push({ nombre: call.function.name, resultado });
       messages.push({
         role: "tool",
         tool_call_id: call.id,
@@ -142,7 +187,13 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
 
   // Se agotaron las rondas de tools sin una respuesta final: no se inventa nada,
   // se degrada a escalamiento (igual que un fallo de proveedor).
-  return { texto: "Dame un segundo, te conecto con un asesor para seguir con esto.", toolsUsed };
+  return {
+    texto: "Dame un segundo, te conecto con un asesor para seguir con esto.",
+    toolsUsed,
+    toolResults,
+    modelo,
+    tokensTotal,
+  };
 }
 
 async function ejecutarTool(
@@ -183,7 +234,17 @@ async function demo(): Promise<void> {
     resultadoA.toolsUsed.includes("recomendar_seguro"),
     `Caso A: el agente debía llamar recomendar_seguro con discovery ya respondido. toolsUsed=${JSON.stringify(resultadoA.toolsUsed)}, texto="${resultadoA.texto}"`
   );
-  console.log("Caso A OK - recomendar_seguro llamada, tools:", resultadoA.toolsUsed);
+  // Prueba dura de que hubo una llamada de red real a OpenAI, no un fixture.
+  // OpenAI devuelve el snapshot resuelto (ej. "gpt-4o-mini-2024-07-18"), no el
+  // alias pedido — el startsWith es justo esa evidencia, no una relajación.
+  assert.ok(
+    resultadoA.modelo?.startsWith(MODEL),
+    `Caso A: se esperaba un modelo que empiece con ${MODEL}, llegó ${resultadoA.modelo}`
+  );
+  assert.ok(resultadoA.tokensTotal > 0, "Caso A: tokensTotal debería ser > 0 si hubo una llamada real");
+  console.log(
+    `Caso A OK - recomendar_seguro llamada, tools: ${JSON.stringify(resultadoA.toolsUsed)}, modelo: ${resultadoA.modelo}, tokens: ${resultadoA.tokensTotal}`
+  );
 
   // Caso B: sin serie resuelta (perfil vacío). El agente no debe inventar
   // datos de un afiliado que no existe, ni llamar recomendar_seguro sin perfil.
@@ -192,13 +253,47 @@ async function demo(): Promise<void> {
   assert.equal(perfilB, null, "self-check: este historial no debe resolver ninguna serie");
 
   const resultadoB = await decidirTurno({ perfil: perfilB, historial: historialB, canal: "web" });
-  assert.ok(
-    !resultadoB.texto.match(/\$\d/),
-    `Caso B: sin perfil, la respuesta no debería traer cifras de dinero inventadas. texto="${resultadoB.texto}"`
-  );
-  console.log("Caso B OK - sin perfil, respuesta:", resultadoB.texto);
+  // Turno 1 sin perfil es determinista (no llama al LLM, ver decidirTurno) —
+  // por eso se puede asertar el texto exacto, no solo "no inventó nada".
+  assert.equal(resultadoB.texto, PREGUNTA_SERIE, `Caso B: turno 1 sin perfil debía ser la pregunta determinista de serie. texto="${resultadoB.texto}"`);
+  assert.equal(resultadoB.tokensTotal, 0, "Caso B: turno determinista no debería llamar a OpenAI");
+  console.log("Caso B OK - sin perfil, turno 1 determinista (sin llamar a OpenAI):", resultadoB.texto);
 
-  console.log("demo OK - agente.ts: tool-calling real verificado en ambos casos");
+  // Caso C: continúa la conversación del Caso A ya con familia decidida
+  // ("familiares") y pide ver opciones concretas. El agente debe llamar
+  // buscar_producto (RAG) y traer productos reales del catálogo, nunca
+  // inventar nombres/coberturas.
+  // Frase explícita a propósito: el prompt exige pedir permiso antes de dar
+  // detalle ("¿te parece si vemos cómo se vería esto en tu caso?"), así que un
+  // "cuéntame las opciones" ambiguo puede recibir de vuelta esa misma pregunta
+  // guiada en vez de invocar la tool. Un "sí" explícito + pedido de detalle
+  // concreto en el mismo mensaje sí cumple la condición del prompt ("si dice
+  // que sí, das el detalle").
+  const historialC: HistMsg[] = [
+    ...historialA,
+    { rol: "bot", texto: resultadoA.texto },
+    {
+      rol: "cliente",
+      texto: "sí, se ajusta a lo que busco, cuéntame el producto específico y qué cubre exactamente",
+    },
+  ];
+  const resultadoC = await decidirTurno({ perfil: perfilA, historial: historialC, canal: "web" });
+  assert.ok(
+    resultadoC.toolsUsed.includes("buscar_producto"),
+    `Caso C: el agente debía llamar buscar_producto al pedir opciones concretas. toolsUsed=${JSON.stringify(resultadoC.toolsUsed)}, texto="${resultadoC.texto}"`
+  );
+  const llamadaBuscarProducto = resultadoC.toolResults.find((t) => t.nombre === "buscar_producto");
+  assert.ok(llamadaBuscarProducto, "Caso C: no se encontró el resultado de buscar_producto");
+  const productos = (llamadaBuscarProducto!.resultado as { productos?: unknown[] }).productos;
+  assert.ok(
+    Array.isArray(productos) && productos.length > 0,
+    `Caso C: buscar_producto debía devolver productos reales del catálogo, llegó: ${JSON.stringify(llamadaBuscarProducto!.resultado)}`
+  );
+  console.log(
+    `Caso C OK - buscar_producto llamada, ${productos!.length} producto(s) real(es) del catálogo, tools: ${JSON.stringify(resultadoC.toolsUsed)}`
+  );
+
+  console.log("demo OK - agente.ts: tool-calling real verificado en los tres casos (recomendar_seguro, sin perfil, buscar_producto)");
 }
 
 if (pathToFileURL(process.argv[1] ?? "").href === import.meta.url) {
