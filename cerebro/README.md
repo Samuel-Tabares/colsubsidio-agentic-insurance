@@ -4,15 +4,16 @@ Servicio HTTP que implementa el lado "cerebro" del contrato ya cableado en
 `app/src/lib/cerebro/` (Vocero): un solo endpoint, `POST /api/decidir`, que
 recibe `CerebroRequest` y devuelve `CerebroResponse`.
 
-Deployado en Vercel: **https://cerebro-five-hazel.vercel.app**
+Deploy manual a Vercel, ver **[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md)**.
 
 ## Para activarlo en Vocero
 
-En el entorno donde corre `app/` (Coolify/compose, no Vercel):
+Una vez desplegado, en el entorno donde corre `app/` (Coolify/compose, no
+Vercel):
 
 ```
 CEREBRO_MODE=external
-CEREBRO_URL=https://cerebro-five-hazel.vercel.app
+CEREBRO_URL=<URL de producción real que asigne Vercel, ver DEPLOY-VERCEL.md>
 ```
 
 ## Qué hace
@@ -54,7 +55,8 @@ npm run dev                        # next dev, prueba POST /api/decidir en local
 | `OPENAI_API_KEY` | Embeddings de `match_catalogo` + chat del agente |
 | `CEREBRO_MODEL` | Opcional, default `gpt-4o-mini` |
 
-Ya cargadas en el proyecto Vercel (`jhonedilsons-projects/cerebro`).
+Se cargan en el dashboard de Vercel al conectar el proyecto, ver
+[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md).
 
 ## Fuera de alcance (a propósito)
 
