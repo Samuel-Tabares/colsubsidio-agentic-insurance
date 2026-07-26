@@ -9,7 +9,7 @@ Llevar a una persona de **"no sé qué seguro necesito"** a **"ya quedé asegura
 un asesor. Conversa, descubre su necesidad real, le recomienda un seguro concreto del catálogo de
 Colsubsidio, y le muestra **por qué ese y no otro**.
 
-- **Demo:** _(pendiente de desplegar)_
+- **Demo:** (https://web-production-54174.up.railway.app/chat)
 - **Reto, contexto y decisiones:** [BRIEF.md](BRIEF.md) (incluye el brief oficial verbatim)
 - **Catálogo de seguros Colsubsidio:** https://www.colsubsidio.com/seguros
 
