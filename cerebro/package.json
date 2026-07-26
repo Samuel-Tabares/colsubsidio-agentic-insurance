@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "check:texto": "node --experimental-strip-types lib/texto.ts",
     "check:recomendar": "node --experimental-strip-types lib/recomendar.ts",
     "check:identidad": "node --experimental-strip-types lib/identidad.ts",
     "check:agente": "node --experimental-strip-types lib/agente.ts"

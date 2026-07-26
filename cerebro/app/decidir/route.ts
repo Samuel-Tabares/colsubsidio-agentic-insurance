@@ -1,6 +1,7 @@
 import { CerebroRequest, type CerebroResponse } from "@/lib/contrato";
 import { resolverSerie } from "@/lib/identidad";
 import { decidirTurno } from "@/lib/agente";
+import { aTextoPlano } from "@/lib/texto";
 import type { AfiliadoRaw } from "@/lib/perfil";
 
 export const dynamic = "force-dynamic";
@@ -34,5 +35,14 @@ export async function POST(req: Request): Promise<Response> {
   );
 
   const respuesta: CerebroResponse = { mensajes: [{ tipo: "text", texto: turno.texto }] };
+
+  // Punto único de salida: TODO mensaje que emite el agente sale en texto
+  // plano, sin markdown. Va acá y no en `decidirTurno` a propósito — así
+  // cubre también las tarjetas ricas (recomendacion/comparacion/cierre)
+  // cuando se agreguen, sin que nadie tenga que acordarse de aplicarlo.
+  respuesta.mensajes = respuesta.mensajes.map((m) =>
+    m.texto ? { ...m, texto: aTextoPlano(m.texto) } : m
+  );
+
   return Response.json(respuesta);
 }
