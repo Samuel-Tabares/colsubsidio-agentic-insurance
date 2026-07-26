@@ -80,6 +80,9 @@ export const CerebroResponse = z.object({
     })
     .catchall(z.unknown())
     .optional(),
+  /** Datos crudos del afiliado ya resuelto por el cerebro; se guardan en
+   * contact.perfilCrudo (panel "Datos del perfil", solo lectura, del admin). */
+  perfil: z.record(z.unknown()).optional(),
   /** Chips de perfil para el riel izquierdo; opcional (el cerebro real puede omitirlo). */
   tags: z.array(CerebroTag).optional(),
   /** Ranking de familias con % match para el riel derecho; opcional. */

@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Cerebro contract** — added a `perfil` field to `CerebroResponse` and wired it in the agent pipeline to write into `contact.perfilCrudo` (the admin's read-only "Datos del perfil" panel). Previously the contract had no way for the brain to hand back structured affiliate data, so that panel could only ever show seed data, never anything from a live conversation
+
 ### Added
 - **`app/` — surfaces + backend on Vocero CRM.** Vendored [Vocero CRM](https://github.com/kevinrivm/vocero-crm) (Next.js 15 + Drizzle + Postgres, MIT) as the base for the web-chat surface and the admin dashboard (inbox/conversations + funnel pipeline + human-takeover toggle). Three integration seams added:
   - **Cerebro seam** (`app/src/lib/cerebro/`) — the RAG+agent brain (Jhon's separate repo) is reached over an HTTP contract, switchable via `CEREBRO_MODE` (`stub` | `external` | `vocero`). The contract carries `presupuesto` (in) and optional `tags`/`ranking` (out) alongside `analisis`. Ships a local scripted stub so the flow runs end-to-end today; pointing at the real brain is one env var

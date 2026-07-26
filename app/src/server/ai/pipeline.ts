@@ -322,6 +322,18 @@ async function runCerebroTurn(
     });
   }
 
+  if (data.perfil) {
+    // Fusión, no reemplazo: perfilCrudo puede traer la fila cruda del afiliado
+    // (con `serie`) sembrada desde el landing — el cerebro la necesita intacta
+    // en los turnos siguientes; lo que devuelve acá son campos de display que
+    // se agregan encima.
+    const prevPerfil = (contact.perfilCrudo ?? {}) as Record<string, unknown>;
+    await db
+      .update(schema.contact)
+      .set({ perfilCrudo: { ...prevPerfil, ...data.perfil }, updatedAt: new Date() })
+      .where(eq(schema.contact.id, conversation.contactId));
+  }
+
   if (data.handoff) {
     if (data.handoff.despedida) {
       await deliverAgentMessage(conversation, {

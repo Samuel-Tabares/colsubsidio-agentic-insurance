@@ -2,6 +2,8 @@ import { CerebroRequest, type CerebroResponse } from "@/lib/contrato";
 import { resolverSerie } from "@/lib/identidad";
 import { decidirTurno } from "@/lib/agente";
 import type { AfiliadoRaw } from "@/lib/perfil";
+import type { Recomendacion } from "@/lib/recomendar";
+import type { ProductoCatalogo } from "@/lib/catalogo";
 
 export const dynamic = "force-dynamic";
 
@@ -34,5 +36,67 @@ export async function POST(req: Request): Promise<Response> {
   );
 
   const respuesta: CerebroResponse = { mensajes: [{ tipo: "text", texto: turno.texto }] };
+
+  // Última salida de cada tool en el turno, derivada de la traza cruda.
+  const recomendacion = turno.toolResults
+    .filter((t) => t.nombre === "recomendar_seguro")
+    .map((t) => t.resultado)
+    .filter(
+      (r): r is Recomendacion => typeof r === "object" && r !== null && "familia" in r
+    )
+    .at(-1);
+  const productos = turno.toolResults
+    .filter((t) => t.nombre === "buscar_producto")
+    .map((t) => t.resultado)
+    .filter(
+      (r): r is { productos: ProductoCatalogo[] } =>
+        typeof r === "object" && r !== null && "productos" in r
+    )
+    .at(-1)?.productos;
+
+  // Vocero mueve el pipeline y pinta el CRM con lo que devolvamos acá — el
+  // agente no llama ninguna tool "de Vocero", solo decide cuándo usar
+  // recomendar_seguro/buscar_producto; este mapeo traduce esas dos tools al
+  // contrato que Vocero ya sabe aplicar (mover fase, guardar perfil/análisis).
+  if (perfil) {
+    respuesta.perfil = {
+      ciudad: perfil.ciudad_afiliado ?? undefined,
+      categoria: perfil.rango_salarial ?? undefined,
+      grupoFamiliar: perfil.segmento_grupo_familiar ?? undefined,
+      seguroInteres: recomendacion?.familia,
+    };
+  }
+
+  if (recomendacion) {
+    respuesta.analisis = {
+      familia: recomendacion.familia,
+      resumen: recomendacion.razon_dato,
+    };
+    respuesta.tags = [
+      perfil?.rango_edad ? { id: "edad", label: perfil.rango_edad, tone: "blue" as const } : null,
+      perfil?.ciudad_afiliado ? { id: "ciudad", label: perfil.ciudad_afiliado, tone: "blue" as const } : null,
+      { id: "familia", label: `Interés: ${recomendacion.familia}`, tone: "olive" as const },
+    ].filter((t): t is NonNullable<typeof t> => t !== null);
+  }
+
+  if (productos && productos.length > 0) {
+    respuesta.ranking = productos.map((p) => ({
+      familia: p.familia,
+      nombre: p.nombre_producto,
+      aseguradora: p.aseguradora,
+      match: Math.round(p.similarity * 100),
+      blurb: p.page_content.slice(0, 140),
+      prima_mensual: p.planes[0]?.precio_mensual_desde ?? undefined,
+    }));
+  }
+
+  // Discovery en curso → "Prospecto" (default del seed, no se toca). Familia
+  // decidida → "Análisis". Ya vio productos concretos → "Cotización / negociación".
+  if (productos && productos.length > 0) {
+    respuesta.fase = "Cotización / negociación";
+  } else if (recomendacion) {
+    respuesta.fase = "Análisis";
+  }
+
   return Response.json(respuesta);
 }
