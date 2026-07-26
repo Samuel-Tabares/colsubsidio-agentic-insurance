@@ -71,10 +71,60 @@ function aPerfilDeReglas(afiliado: AfiliadoRaw): Perfil {
   return { ...afiliado };
 }
 
+/**
+ * Dónde va la conversación dentro del funnel, y qué se espera del agente ahí.
+ * Sin esto el agente trata todos los turnos igual: vuelve a hacer discovery a
+ * alguien que ya está negociando, o sigue vendiendo a alguien que ya aceptó.
+ * La fase la clasifica lib/estado.ts; acá solo se le dice al agente en cuál
+ * está para que se comporte en consecuencia.
+ */
+const GUIA_FASE: Record<string, string> = {
+  Prospecto:
+    "La persona acaba de llegar. Tu trabajo ahora es abrir y hacer discovery, una pregunta por turno. No menciones productos ni precios todavía.",
+  Análisis:
+    "Ya se entiende qué necesita. Termina de confirmar lo que más le importa proteger y pide permiso antes de entrar al detalle del producto. Todavía no sueltes precio sin que lo confirme.",
+  "Cotización / negociación":
+    "Ya vio algo concreto. Tu trabajo es resolver dudas y objeciones con la estructura 3A, no repetir el discovery ni volver a preguntar cosas que ya te contó.",
+  "Cierre ganado":
+    "Ya aceptó. No vuelvas a vender ni ofrezcas más productos. Confirma el resumen de lo acordado y que un asesor humano lo contacta.",
+  "Cierre perdido":
+    "Dijo que no. Respétalo: no insistas, no reencuadres, no ofrezcas alternativas. Agradece y deja la puerta abierta en una sola frase corta.",
+};
+
+function bloqueFase(fase: string | null): string {
+  if (!fase) return "";
+  const guia = GUIA_FASE[fase];
+  if (!guia) return "";
+  return `FASE ACTUAL DE ESTA CONVERSACIÓN: ${fase}\n${guia}`;
+}
+
+/**
+ * Lo que la persona ha contado de su vida en la conversación (mascota,
+ * dependientes, trabajo). Va aparte del PERFIL porque es de otra fuente: el
+ * perfil es la base de afiliados, esto es lo que dijo en vivo. Se le repite
+ * explícito para que nunca vuelva a preguntar algo que ya le contaron.
+ */
+function bloqueHechos(hechos: HechoConocido[]): string {
+  if (hechos.length === 0) return "";
+  return [
+    "LO QUE ESTA PERSONA YA TE CONTÓ (no lo vuelvas a preguntar, dalo por sabido):",
+    ...hechos.map((h) => `- ${h.etiqueta}: ${h.valor}`),
+  ].join("\n");
+}
+
+export interface HechoConocido {
+  etiqueta: string;
+  valor: string;
+}
+
 export interface TurnoInput {
   perfil: AfiliadoRaw | null;
   historial: HistMsg[];
   canal: "whatsapp" | "web";
+  /** Etapa del funnel donde está el lead (nombre exacto). */
+  faseActual?: string | null;
+  /** Datos que la persona dio en turnos anteriores, ya persistidos por el canal. */
+  hechos?: HechoConocido[];
 }
 
 export interface TurnoResultado {
@@ -115,9 +165,15 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
 
   const client = openaiClient();
 
-  const system = [SYSTEM_PROMPT_BASE, bloquePerfil(input.perfil), `CANAL: ${input.canal}`].join(
-    "\n\n"
-  );
+  const system = [
+    SYSTEM_PROMPT_BASE,
+    bloquePerfil(input.perfil),
+    bloqueHechos(input.hechos ?? []),
+    bloqueFase(input.faseActual ?? null),
+    `CANAL: ${input.canal}`,
+  ]
+    .filter((b) => b !== "")
+    .join("\n\n");
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: system },

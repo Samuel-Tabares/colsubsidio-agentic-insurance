@@ -16,6 +16,9 @@ export const CerebroRequest = z.object({
   historial: z.array(CerebroHistMsg),
   perfil: z.record(z.unknown()).nullable().optional(),
   presupuesto: z.number().optional(),
+  /** Etapa del funnel donde está el lead hoy. Este servicio es sin estado: sin
+   * esto tendría que adivinar la fase desde cero en cada turno. */
+  faseActual: z.string().nullable().optional(),
 });
 export type CerebroRequest = z.infer<typeof CerebroRequest>;
 

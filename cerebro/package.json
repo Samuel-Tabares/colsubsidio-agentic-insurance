@@ -11,7 +11,8 @@
     "check:texto": "node --experimental-strip-types lib/texto.ts",
     "check:recomendar": "node --experimental-strip-types lib/recomendar.ts",
     "check:identidad": "node --experimental-strip-types lib/identidad.ts",
-    "check:agente": "node --experimental-strip-types lib/agente.ts"
+    "check:agente": "node --experimental-strip-types lib/agente.ts",
+    "check:estado": "node --experimental-strip-types lib/estado.ts"
   },
   "dependencies": {
     "next": "^15.1.3",

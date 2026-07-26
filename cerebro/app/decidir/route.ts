@@ -3,6 +3,13 @@ import { resolverSerie } from "@/lib/identidad";
 import { decidirTurno } from "@/lib/agente";
 import { aTextoPlano } from "@/lib/texto";
 import { getAfiliadoBySerie, type AfiliadoRaw } from "@/lib/perfil";
+import {
+  leerEstado,
+  fusionarHechos,
+  hechosDePerfil,
+  faseMasAvanzada,
+  type FaseAgente,
+} from "@/lib/estado";
 import type { Recomendacion } from "@/lib/recomendar";
 import type { ProductoCatalogo } from "@/lib/catalogo";
 
@@ -31,7 +38,28 @@ export async function POST(req: Request): Promise<Response> {
 
   const perfil =
     (await resolverPerfilDeVocero(parsed.data.perfil)) ?? (await resolverSerie(historial));
-  const turno = await decidirTurno({ perfil, historial, canal });
+
+  // Lo que la persona ya había contado en turnos anteriores viaja de vuelta
+  // dentro de `perfil` (el canal lo persiste en contact.perfilCrudo). El agente
+  // lo necesita para no repreguntarlo.
+  const hechosPrevios = hechosDePerfil(parsed.data.perfil);
+  const turno = await decidirTurno({
+    perfil,
+    historial,
+    canal,
+    faseActual: parsed.data.faseActual ?? null,
+    hechos: hechosPrevios.map((h) => ({ etiqueta: h.etiqueta, valor: h.valor })),
+  });
+
+  // Segunda pasada, solo de lectura: en qué fase quedó el lead y qué contó la
+  // persona de su vida en este turno (ver lib/estado.ts).
+  const lectura = await leerEstado({
+    historial,
+    respuestaAgente: turno.texto,
+    faseActual: parsed.data.faseActual ?? null,
+    hechosPrevios,
+  });
+  const hechos = fusionarHechos(hechosPrevios, lectura.hechos);
 
   // Traza mínima de gobernanza: deja ver en los logs qué tools se usaron en
   // cada turno real (no solo en el self-check) — es la evidencia de que la
@@ -63,12 +91,21 @@ export async function POST(req: Request): Promise<Response> {
   // agente no llama ninguna tool "de Vocero", solo decide cuándo usar
   // recomendar_seguro/buscar_producto; este mapeo traduce esas dos tools al
   // contrato que Vocero ya sabe aplicar (mover fase, guardar perfil/análisis).
-  if (perfil) {
+  // El perfil sale de dos fuentes que NO se pisan: la base de afiliados es la
+  // base (ciudad, salario, grupo familiar) y los `hechos` son lo que la persona
+  // contó en vivo. Se emite aunque no haya serie resuelta: alguien sin perfil en
+  // la base igual cuenta cosas de su vida, y eso tiene que llegar al CRM.
+  if (perfil || hechos.length > 0) {
     respuesta.perfil = {
-      ciudad: perfil.ciudad_afiliado ?? undefined,
-      categoria: perfil.rango_salarial ?? undefined,
-      grupoFamiliar: perfil.segmento_grupo_familiar ?? undefined,
-      seguroInteres: recomendacion?.familia,
+      ...(perfil
+        ? {
+            ciudad: perfil.ciudad_afiliado ?? undefined,
+            categoria: perfil.rango_salarial ?? undefined,
+            grupoFamiliar: perfil.segmento_grupo_familiar ?? undefined,
+          }
+        : {}),
+      ...(recomendacion ? { seguroInteres: recomendacion.familia } : {}),
+      hechos,
     };
   }
 
@@ -77,12 +114,26 @@ export async function POST(req: Request): Promise<Response> {
       familia: recomendacion.familia,
       resumen: recomendacion.razon_dato,
     };
-    respuesta.tags = [
-      perfil?.rango_edad ? { id: "edad", label: perfil.rango_edad, tone: "blue" as const } : null,
-      perfil?.ciudad_afiliado ? { id: "ciudad", label: perfil.ciudad_afiliado, tone: "blue" as const } : null,
-      { id: "familia", label: `Interés: ${recomendacion.familia}`, tone: "olive" as const },
-    ].filter((t): t is NonNullable<typeof t> => t !== null);
   }
+
+  // Chips del riel: primero lo que la persona dijo (es lo vivo y lo que prueba
+  // que se le escuchó), después lo que ya se sabía de la base.
+  const tags = [
+    ...hechos.map((h) => ({
+      id: `hecho-${h.id}`,
+      label: `${h.etiqueta}: ${h.valor}`,
+      icon: h.icono,
+      tone: "yellow" as const,
+    })),
+    perfil?.rango_edad ? { id: "edad", label: perfil.rango_edad, tone: "blue" as const } : null,
+    perfil?.ciudad_afiliado
+      ? { id: "ciudad", label: perfil.ciudad_afiliado, tone: "blue" as const }
+      : null,
+    recomendacion
+      ? { id: "familia", label: `Interés: ${recomendacion.familia}`, tone: "olive" as const }
+      : null,
+  ].filter((t): t is NonNullable<typeof t> => t !== null);
+  if (tags.length > 0) respuesta.tags = tags;
 
   if (productos && productos.length > 0) {
     respuesta.ranking = productos.map((p) => ({
@@ -95,13 +146,25 @@ export async function POST(req: Request): Promise<Response> {
     }));
   }
 
-  // Discovery en curso → "Prospecto" (default del seed, no se toca). Familia
-  // decidida → "Análisis". Ya vio productos concretos → "Cotización / negociación".
-  if (productos && productos.length > 0) {
-    respuesta.fase = "Cotización / negociación";
-  } else if (recomendacion) {
-    respuesta.fase = "Análisis";
-  }
+  // La fase la decide la lectura de la conversación (lib/estado.ts), que es lo
+  // único que sabe si la persona aceptó o se fue. Las tools solo ponen un PISO:
+  // si en este turno se mostraron productos, la conversación ya está al menos en
+  // negociación, diga lo que diga el clasificador. Se toma la más avanzada de
+  // las dos. Antes la fase salía SOLO de qué tool se llamó, y como
+  // `recomendar_seguro` se vuelve a llamar en turnos posteriores, un lead ya en
+  // negociación caía de vuelta a "Análisis" cada vez.
+  const piso: FaseAgente | null =
+    productos && productos.length > 0
+      ? "Cotización / negociación"
+      : recomendacion
+        ? "Análisis"
+        : null;
+  const fase = faseMasAvanzada(lectura.fase, piso);
+  if (fase) respuesta.fase = fase;
+
+  console.log(
+    `[cerebro] fase=${fase ?? "-"} (lectura=${lectura.fase ?? "-"}, piso=${piso ?? "-"}, actual=${parsed.data.faseActual ?? "-"}) hechos=${hechos.length}`
+  );
 
   // Punto único de salida: TODO mensaje que emite el agente sale en texto
   // plano, sin markdown. Va acá y no en `decidirTurno` a propósito — así
