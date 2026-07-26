@@ -7,8 +7,10 @@ import {
   FlaskConical,
   Inbox,
   Kanban,
+  LayoutGrid,
   LogOut,
   Settings,
+  ShieldCheck,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -18,6 +20,7 @@ import { signOut } from "@/lib/auth/client";
 import { useEvents } from "@/components/use-events";
 
 const NAV = [
+  { href: "/dashboard", label: "Panel", icon: LayoutGrid },
   { href: "/inbox", label: "Bandeja", icon: Inbox, badge: true },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/contacts", label: "Contactos", icon: Users },
@@ -58,19 +61,19 @@ export function AppNav({
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r bg-subtle px-3 pb-3.5 pt-4">
-      {/* Brand white-label */}
-      <div className="mb-4 flex items-center gap-2.5 px-2">
+      {/* Marca Colsubsidio */}
+      <div className="mb-4 flex items-center gap-2.5 px-1 py-1">
         <span
-          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm bg-brand text-[15px] font-bold text-white"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-yellow"
           aria-hidden
         >
-          {branding.name.charAt(0).toUpperCase()}
+          <ShieldCheck className="h-5 w-5 text-brand-blue" strokeWidth={2} />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-[16px] font-[650] leading-tight tracking-tight">
+          <span className="block truncate font-display text-[16px] font-[650] leading-tight tracking-tight text-brand-blue">
             {branding.name}
           </span>
-          <span className="block text-[11px] text-text-3">CRM · WhatsApp</span>
+          <span className="block text-[11px] text-text-3">Panel gerencial</span>
         </span>
       </div>
 

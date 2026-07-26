@@ -1,40 +1,17 @@
-import { desc, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { apiError, parseBody, withAuth } from "@/lib/api";
 import { getDb, schema } from "@/lib/db";
 import { newId } from "@/lib/db/ids";
-import { scoped } from "@/lib/db/tenant";
-import { serializeContact } from "@/server/contacts";
+import { listContactRows, serializeContact } from "@/server/contacts";
 
 export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (session, req: Request) => {
   const url = new URL(req.url);
-  const q = url.searchParams.get("q")?.trim();
-  const includeArchived = url.searchParams.get("archived") === "true";
-
-  const db = getDb();
-  const rows = await db
-    .select()
-    .from(schema.contact)
-    .where(
-      scoped(
-        schema.contact.organizationId,
-        session.organizationId,
-        q
-          ? or(
-              ilike(schema.contact.name, `%${q}%`),
-              ilike(schema.contact.phone, `%${q}%`)
-            )
-          : undefined
-      )
-    )
-    .orderBy(desc(schema.contact.updatedAt))
-    .limit(200);
-
-  const contacts = rows
-    .filter((c) => includeArchived || !c.archivedAt)
-    .map(serializeContact);
+  const contacts = await listContactRows(session.organizationId, {
+    q: url.searchParams.get("q") ?? undefined,
+    includeArchived: url.searchParams.get("archived") === "true",
+  });
   return Response.json({ contacts });
 });
 

@@ -70,11 +70,22 @@ Se construyó insertando tres seams, no reescribiendo:
 - **Funnel de seguros** (`app/src/lib/funnel.ts`), sembrado por org.
 
 **Estado:** web-chat en `/chat` con el **diseño real de Sarah** ya portado (fork de Lovable en
-`frontend/`, superficie `app/src/components/surface-asegura.tsx` + hook `use-asegura-channel`) y
+`frontend/web-chat/`, superficie `app/src/components/surface-asegura.tsx` + hook `use-asegura-channel`) y
 **cableado de verdad**: chat por SSE, tags de perfil + ranking en vivo desde `analisis`, slider de
 presupuesto que persiste (`conversation.presupuesto`) y ajusta la recomendación. Admin (`/inbox`,
 `/pipeline`) funcionando de punta a punta con el stub. Corre contra Postgres local (`vocero`), no
 Supabase todavía (migraciones `app/drizzle/0001_*` + `0002_*` — esta última agrega `presupuesto`).
+
+**Admin gerencial ampliado (2026-07-26):** se integró un segundo frontend de referencia
+(vendorizado en `frontend/manager-view/`, TanStack+Lovable, solo referencia de diseño) portándolo
+sobre el back real. Nuevo: sección **Dashboard** (`/dashboard`, landing
+post-login) con métricas + 2 gráficas de barras hechas a mano (sin recharts) desde `/api/dashboard`;
+**Contactos** como tabla enriquecida (fase/seguro/canal/última interacción + editar/ver-chat/archivar
++ dialog de detalle); **Bandeja** con burbujas de marca y panel derecho con "Datos del perfil" (solo
+lectura desde `contact.perfilCrudo`, lo llena el cerebro) + "Análisis de IA" (`contact.analisis`).
+El **seed demo** pasó de "Ferretería El Martillo" a **seguros Colsubsidio** (11 perfiles con
+perfil+análisis+canal, etapas del funnel real, agente "Asegura"). Detalle en la memoria
+`app-surfaces-on-vocero`.
 Gate verde: typecheck + lint + build + 97 tests, más self-test de comportamiento de punta a punta
 (sesión → tags/ranking → presupuesto → recomendación → comparación → control → cierre) verificado
 por SSE. Voz (ElevenLabs) y "login" de S0 quedan cosméticos, fuera del MVP. **WhatsApp queda como

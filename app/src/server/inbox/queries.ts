@@ -6,6 +6,7 @@ import { isWindowOpen, windowRemainingMs } from "@/server/inbox/window";
 export type ConversationDto = {
   id: string;
   contact: { id: string; name: string; phone: string };
+  channel: "whatsapp" | "web";
   stageName: string | null;
   aiEnabled: boolean;
   handoffAt: string | null;
@@ -116,6 +117,7 @@ export function serializeConversation(
   return {
     id: c.id,
     contact: { id: contact.id, name: contact.name, phone: contact.phone },
+    channel: c.channel,
     stageName,
     aiEnabled: c.aiEnabled,
     handoffAt: c.handoffAt?.toISOString() ?? null,

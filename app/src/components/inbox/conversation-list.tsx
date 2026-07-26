@@ -6,6 +6,7 @@ import type { ConversationDto } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ContactAvatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
+import { ChannelBadge } from "@/components/admin/channel-badge";
 import { formatTime, previewText } from "./helpers";
 
 const STAGE_DOT: Record<string, string> = {
@@ -195,7 +196,8 @@ export function ConversationList({
                           </span>
                         )}
                       </span>
-                      <span className="mt-1.5 flex items-center gap-1.5">
+                      <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <ChannelBadge canal={c.channel} />
                         {c.stageName && (
                           <span className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-2 py-0.5 text-[11px] text-text-2">
                             <span

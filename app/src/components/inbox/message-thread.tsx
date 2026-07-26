@@ -14,13 +14,14 @@ import { cn } from "@/lib/utils";
 import { mediaLabel } from "./helpers";
 
 function StatusTicks({ status }: { status: MessageDto["status"] }) {
-  const cls = "h-[13px] w-[13px]";
-  if (status === "pending") return <Clock3 className={cn(cls, "text-text-4")} strokeWidth={1.7} />;
-  if (status === "sent") return <Check className={cn(cls, "text-text-4")} strokeWidth={1.7} />;
+  // Las burbujas salientes van sobre azul de marca: los ticks van en blanco.
+  const cls = "h-[13px] w-[13px] text-white/70";
+  if (status === "pending") return <Clock3 className={cls} strokeWidth={1.7} />;
+  if (status === "sent") return <Check className={cls} strokeWidth={1.7} />;
   if (status === "delivered")
-    return <CheckCheck className={cn(cls, "text-text-4")} strokeWidth={1.7} />;
+    return <CheckCheck className={cls} strokeWidth={1.7} />;
   if (status === "read")
-    return <CheckCheck className={cn(cls, "text-brand")} strokeWidth={1.7} />;
+    return <CheckCheck className={cn("h-[13px] w-[13px] text-white")} strokeWidth={1.7} />;
   return <AlertTriangle className={cn(cls, "text-destructive")} strokeWidth={1.7} />;
 }
 
@@ -82,11 +83,11 @@ export function MessageThread({ messages }: { messages: MessageDto[] }) {
             >
               <div
                 className={cn(
-                  "max-w-[64%] rounded-lg px-3 pb-1.5 pt-2 text-sm leading-[1.45] shadow-sm",
+                  "max-w-[70%] rounded-2xl px-3.5 pb-1.5 pt-2 text-sm leading-[1.45] shadow-sm",
                   out
-                    ? "border border-brand-soft bg-bubble-out text-bubble-out-text"
-                    : "bg-background",
-                  !grouped && (out ? "rounded-tr-[5px]" : "rounded-tl-[5px]")
+                    ? "bg-brand-blue text-white"
+                    : "border bg-background",
+                  !grouped && (out ? "rounded-br-sm" : "rounded-bl-sm")
                 )}
               >
                 {m.type === "text" || m.type === "template" ? (
@@ -103,13 +104,21 @@ export function MessageThread({ messages }: { messages: MessageDto[] }) {
                 <span className="float-right ml-2 mt-1 flex items-center gap-1">
                   {m.aiGenerated && (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[10px] font-medium text-brand"
+                      className={cn(
+                        "inline-flex items-center gap-0.5 text-[10px] font-medium",
+                        out ? "text-white/80" : "text-brand-blue"
+                      )}
                       title="Respuesta generada por IA"
                     >
                       <Sparkles className="h-3 w-3" strokeWidth={1.7} /> IA
                     </span>
                   )}
-                  <span className="text-[10.5px] text-text-4">
+                  <span
+                    className={cn(
+                      "text-[10.5px]",
+                      out ? "text-white/70" : "text-text-4"
+                    )}
+                  >
                     {bubbleTime(m.createdAt)}
                   </span>
                   {out && <StatusTicks status={m.status} />}

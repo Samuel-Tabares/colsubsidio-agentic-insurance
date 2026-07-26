@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ContactAvatar } from "@/components/avatar";
 import type { ConversationDto, MessageDto } from "@/lib/types";
 import { useEvents } from "@/components/use-events";
+import { ChannelBadge } from "@/components/admin/channel-badge";
 import { ConversationList } from "./conversation-list";
 import { MessageThread } from "./message-thread";
 import { Composer } from "./composer";
@@ -178,9 +179,12 @@ export function InboxClient() {
                   size="md"
                 />
                 <div>
-                  <p className="text-[15px] font-[650] leading-tight">
-                    {selected.contact.name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[15px] font-[650] leading-tight">
+                      {selected.contact.name}
+                    </p>
+                    <ChannelBadge canal={selected.channel} />
+                  </div>
                   <p
                     className={
                       selected.windowOpen
@@ -188,9 +192,11 @@ export function InboxClient() {
                         : "text-xs text-text-3"
                     }
                   >
-                    {selected.windowOpen
-                      ? "ventana abierta"
-                      : `+${selected.contact.phone}`}
+                    {selected.channel === "web"
+                      ? "conversación web"
+                      : selected.windowOpen
+                        ? "ventana abierta"
+                        : `+${selected.contact.phone}`}
                   </p>
                 </div>
               </div>

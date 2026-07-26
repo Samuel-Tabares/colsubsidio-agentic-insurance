@@ -2,8 +2,22 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronRight, Sparkles, UserRound } from "lucide-react";
-import type { ConversationDto, StageDto } from "@/lib/types";
+import {
+  Check,
+  ChevronRight,
+  MapPin,
+  Sparkles,
+  Tag,
+  User,
+  UserRound,
+  Users,
+} from "lucide-react";
+import type {
+  Analisis,
+  ConversationDto,
+  Perfil,
+  StageDto,
+} from "@/lib/types";
 import { cn, formatPhone } from "@/lib/utils";
 import { ContactAvatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
@@ -37,6 +51,9 @@ export function ContactPanel({
   const [stages, setStages] = useState<StageDto[]>([]);
   const [currentStageId, setCurrentStageId] = useState<string | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
+  // Perfil (solo lectura, lo llena el cerebro) + análisis de IA del contacto.
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [analisis, setAnalisis] = useState<Analisis | null>(null);
   // Estado global del agente: sin esto, el toggle "Respondiendo" mentiría
   // cuando el agente aún no se ha configurado/encendido.
   const [agentEnabled, setAgentEnabled] = useState(false);
@@ -59,6 +76,8 @@ export function ContactPanel({
       setNotes(detail.contact?.notes ?? "");
       setCurrentStageId(detail.stage?.id ?? null);
       setLeadId(detail.lead?.id ?? null);
+      setPerfil(detail.contact?.perfil ?? null);
+      setAnalisis(detail.contact?.analisis ?? null);
     }
     if (stagesRes) setStages(stagesRes.stages);
     setAgentEnabled(Boolean(agentRes?.profile?.enabled));
@@ -76,6 +95,8 @@ export function ContactPanel({
     if (detail) {
       setCurrentStageId(detail.stage?.id ?? null);
       setLeadId(detail.lead?.id ?? null);
+      setPerfil(detail.contact?.perfil ?? null);
+      setAnalisis(detail.contact?.analisis ?? null);
     }
     if (agentRes) {
       setAgentEnabled(Boolean(agentRes.profile?.enabled));
@@ -234,6 +255,101 @@ export function ContactPanel({
             )}
           </div>
         </section>
+
+        {/* Datos del perfil (solo lectura; lo llena el cerebro vía RAG) */}
+        <section className="border-b p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-3">
+            Datos del perfil
+          </p>
+          {perfil &&
+          (perfil.edad != null ||
+            perfil.ciudad ||
+            perfil.categoria ||
+            perfil.grupoFamiliar ||
+            (perfil.seguroInteres && perfil.seguroInteres !== "—")) ? (
+            <div className="space-y-2 text-[13px]">
+              {perfil.edad != null && (
+                <div className="flex items-center gap-2">
+                  <User className="h-3.5 w-3.5 text-text-3" strokeWidth={1.7} />
+                  <span>{perfil.edad} años</span>
+                </div>
+              )}
+              {perfil.ciudad && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-text-3" strokeWidth={1.7} />
+                  <span>{perfil.ciudad}</span>
+                </div>
+              )}
+              {perfil.categoria && (
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5 text-text-3" strokeWidth={1.7} />
+                  <span>Categoría {perfil.categoria}</span>
+                </div>
+              )}
+              {perfil.grupoFamiliar && (
+                <div className="flex items-start gap-2">
+                  <Users className="mt-0.5 h-3.5 w-3.5 text-text-3" strokeWidth={1.7} />
+                  <span>{perfil.grupoFamiliar}</span>
+                </div>
+              )}
+              {perfil.seguroInteres && perfil.seguroInteres !== "—" && (
+                <div className="pt-1 text-xs text-text-3">
+                  Seguro de interés:{" "}
+                  <span className="font-medium text-foreground">
+                    {perfil.seguroInteres}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-text-3">
+              Aún sin datos de perfil. El cerebro los completa a medida que el
+              cliente comparte información.
+            </p>
+          )}
+        </section>
+
+        {/* Análisis de IA (resumen + ranking del cerebro) */}
+        {(analisis?.resumen || (analisis?.ranking?.length ?? 0) > 0) && (
+          <section className="border-b p-4">
+            <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-3">
+              <Sparkles className="h-3.5 w-3.5 text-brand-yellow" strokeWidth={1.7} />
+              Análisis de IA
+            </p>
+            {analisis?.resumen && (
+              <p className="mb-2.5 text-xs text-text-2">{analisis.resumen}</p>
+            )}
+            <div className="space-y-2">
+              {(analisis?.ranking ?? []).map((r) => (
+                <div
+                  key={`${r.familia}-${r.nombre}`}
+                  className="rounded-md border bg-secondary/50 p-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-semibold text-brand-blue">
+                      {r.nombre}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-brand-blue/10 px-1.5 py-0.5 text-[10px] font-semibold text-brand-blue">
+                      {Math.round(r.match)}%
+                    </span>
+                  </div>
+                  {r.blurb && (
+                    <p className="mt-1 text-[11px] text-text-3">{r.blurb}</p>
+                  )}
+                  {(r.aseguradora || r.prima_mensual != null) && (
+                    <p className="mt-1 text-[10.5px] text-text-3">
+                      {r.aseguradora}
+                      {r.aseguradora && r.prima_mensual != null ? " · " : ""}
+                      {r.prima_mensual != null
+                        ? `$${r.prima_mensual.toLocaleString("es-CO")}/mes`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Stepper de etapa */}
         {stages.length > 0 && leadId && (
