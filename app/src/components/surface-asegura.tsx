@@ -220,7 +220,7 @@ function S1Conversation({ ch }: { ch: Channel }) {
   }, [ch.presupuestoInicial]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [ch.messages.length]);
 
   useEffect(() => {
@@ -249,9 +249,9 @@ function S1Conversation({ ch }: { ch: Channel }) {
   };
 
   return (
-    <main className="mx-auto grid max-w-[1440px] gap-6 px-4 pb-8 pt-6 md:px-8 lg:h-[calc(100vh-4rem)] lg:grid-cols-12 lg:gap-8">
-      {/* LEFT — sticky mientras el chat central scrollea, borde de contraste */}
-      <aside className="animate-in flex flex-col gap-6 lg:col-span-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-r lg:border-brand-graphite/10 lg:pr-6">
+    <main className="mx-auto grid max-w-[1440px] gap-6 px-4 pb-8 pt-6 md:px-8 lg:h-[calc(100vh-4rem)] lg:grid-cols-12 lg:gap-8 lg:overflow-hidden">
+      {/* LEFT — columna propia con scroll interno, borde de contraste */}
+      <aside className="animate-in flex flex-col gap-6 lg:col-span-3 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-brand-graphite/10 lg:pr-6">
         <div>
           <h2 className="font-display text-2xl font-bold text-brand-blue">Siempre pensando en ti</h2>
           <p className="mt-1 text-xs text-brand-graphite/60">
@@ -306,7 +306,7 @@ function S1Conversation({ ch }: { ch: Channel }) {
       </aside>
 
       {/* CENTER */}
-      <section className="flex flex-col gap-5 lg:col-span-6">
+      <section className="flex flex-col gap-5 lg:col-span-6 lg:h-full lg:min-h-0">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-brand-graphite/50">
             <span>Cada vez más cerca a tu seguro ideal</span>
@@ -339,7 +339,7 @@ function S1Conversation({ ch }: { ch: Channel }) {
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1">
           {ch.messages.map((m, i) => (
             <MessageRow key={m.id} m={m} i={i} onReply={(t) => ch.send(t)} />
           ))}
@@ -361,9 +361,9 @@ function S1Conversation({ ch }: { ch: Channel }) {
         />
       </section>
 
-      {/* RIGHT — sticky mientras el chat central scrollea, borde de contraste */}
+      {/* RIGHT — columna propia con scroll interno, borde de contraste */}
       <aside
-        className="animate-in flex flex-col gap-5 lg:col-span-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-l lg:border-brand-graphite/10 lg:pl-6"
+        className="animate-in flex flex-col gap-5 lg:col-span-3 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-brand-graphite/10 lg:pl-6"
         style={{ animationDelay: "150ms" }}
       >
         <div>
