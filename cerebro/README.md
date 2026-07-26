@@ -6,17 +6,23 @@ prefijo `/api` — Vocero llama literal `{CEREBRO_URL}/decidir`, ver
 `app/src/lib/cerebro/index.ts`), que recibe `CerebroRequest` y devuelve
 `CerebroResponse`.
 
-Deploy manual a Vercel, ver **[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md)**.
+Corre en **Railway**, proyecto `colsubsidio-asegura`, servicio `cerebro` (raíz
+`cerebro/`), y redespliega solo con cada push a `main`. Ver la sección
+*Despliegue* del [README general](../README.md). El
+[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md) describe un montaje anterior que ya no
+se usa.
 
 ## Para activarlo en Vocero
 
-Una vez desplegado, en el entorno donde corre `app/` (Coolify/compose, no
-Vercel):
+En el entorno donde corre `app/`:
 
 ```
 CEREBRO_MODE=external
-CEREBRO_URL=<URL de producción real que asigne Vercel, ver DEPLOY-VERCEL.md>
+CEREBRO_URL=http://cerebro.railway.internal:3000   # red privada de Railway
 ```
+
+Fuera de Railway, apunta `CEREBRO_URL` a la URL pública donde lo hayas
+desplegado.
 
 ## Qué hace
 

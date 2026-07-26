@@ -1,5 +1,12 @@
 # Deploy manual a Vercel
 
+> ⚠️ **Este no es el despliegue que corre.** El cerebro vive en Railway, en el
+> proyecto `colsubsidio-asegura`, como servicio `cerebro` junto a `web` y al
+> Postgres, y redespliega solo con cada push a `main`. `web` lo alcanza por la
+> red privada (`cerebro.railway.internal`), así que el cerebro no está expuesto
+> a internet. Ver la sección **Despliegue** del [README](../README.md).
+> Este documento queda como referencia histórica; no lo sigas para desplegar.
+
 `cerebro/` vive dentro del repo del equipo, no en un repo propio. Vercel
 necesita saber que la raíz del proyecto es esta subcarpeta, no la raíz del
 repo (ahí no hay `package.json`).
