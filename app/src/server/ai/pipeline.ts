@@ -315,6 +315,13 @@ async function runCerebroTurn(
     });
   }
 
+  if (data.perfil) {
+    await db
+      .update(schema.contact)
+      .set({ perfilCrudo: data.perfil, updatedAt: new Date() })
+      .where(eq(schema.contact.id, conversation.contactId));
+  }
+
   if (data.handoff) {
     if (data.handoff.despedida) {
       await deliverAgentMessage(conversation, {
