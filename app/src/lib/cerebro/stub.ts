@@ -35,7 +35,15 @@ export function stubDecidirTurno(req: CerebroRequest): CerebroResponse {
   const turnos = req.historial.filter((m) => m.rol === "cliente").length;
   // Desde el 2º turno ya hay señal: adjunta los rieles (perfil + ranking en vivo).
   if (turnos >= 2) {
-    return { ...base, tags: tagsDe(req), ranking: rankingDe(req) };
+    const hechos = hechosDe(req);
+    return {
+      ...base,
+      tags: tagsDe(req),
+      ranking: rankingDe(req),
+      // Los hechos van en `perfil` para que el canal los persista y el admin los
+      // pinte junto a los datos de la semilla (mismo contrato que el cerebro real).
+      ...(hechos.length > 0 ? { perfil: { hechos } } : {}),
+    };
   }
   return base;
 }
@@ -49,6 +57,21 @@ function decidirBase(req: CerebroRequest): CerebroResponse {
     return {
       mensajes: [{ tipo: "text", texto: GREETING }, { tipo: "text", texto: DISCOVERY[0]! }],
       fase: "Prospecto",
+    };
+  }
+  // Un rechazo explícito se escucha en CUALQUIER punto, no solo al final del
+  // guion: si la persona dice que no en mitad del discovery, el lead se pierde
+  // ahí. Va antes del recorrido por número de turno a propósito.
+  if (rechaza(texto)) {
+    return {
+      mensajes: [
+        {
+          tipo: "text",
+          texto:
+            "Entendido, gracias por tu tiempo. Si más adelante quieres retomarlo, acá quedo. 🙌",
+        },
+      ],
+      fase: "Cierre perdido",
     };
   }
   // Turnos 2..4: siguientes preguntas del discovery.
@@ -101,7 +124,8 @@ function decidirBase(req: CerebroRequest): CerebroResponse {
       ],
     };
   }
-  // Turno 8+: cierre si acepta; si no, resuelve la duda con lenguaje simple.
+  // Turno 8+: cierre ganado si acepta; si solo duda se le resuelve sin mover el
+  // lead (una objeción no es una pérdida — el rechazo ya se atajó arriba).
   if (afirma(texto)) {
     const producto = productoDe(elegirFamilia(req));
     return {
@@ -210,22 +234,90 @@ function primaAjustada(base: number, presupuesto?: number): number {
   return Math.max(piso, Math.min(base, techo));
 }
 
+/**
+ * Señales que el stub reconoce en lo que escribe el cliente. Una sola tabla
+ * alimenta los chips del riel Y los "hechos" que se persisten en el perfil, para
+ * que no se desincronicen (el cerebro real hace lo mismo con un LLM en vez de
+ * regex — ver cerebro/lib/estado.ts).
+ */
+const SENALES: {
+  id: string;
+  chip: string;
+  etiqueta: string;
+  valor: string;
+  icono: string;
+  tone: NonNullable<CerebroTag["tone"]>;
+  re: RegExp;
+}[] = [
+  {
+    id: "dependientes",
+    chip: "Con dependientes",
+    etiqueta: "Dependientes",
+    valor: "sí, tiene",
+    icono: "👨‍👩‍👧",
+    tone: "blue",
+    re: /(hij|esposa|esposo|mam|pap|depende|familia)/,
+  },
+  {
+    id: "mascota",
+    chip: "Tiene mascota",
+    etiqueta: "Mascota",
+    valor: "sí, convive con una",
+    icono: "🐶",
+    tone: "yellow",
+    re: /(perro|gato|mascota|firulais)/,
+  },
+  {
+    id: "vehiculo",
+    chip: "Tiene vehículo",
+    etiqueta: "Vehículo",
+    valor: "carro o moto",
+    icono: "🏍️",
+    tone: "graphite",
+    re: /(moto|carro|vehículo|vehiculo|yamaha)/,
+  },
+  {
+    id: "hogar",
+    chip: "Cuida su hogar",
+    etiqueta: "Vivienda",
+    valor: "le importa protegerla",
+    icono: "🏠",
+    tone: "olive",
+    re: /(arriend|arrend|casa|apartamento|hogar)/,
+  },
+  {
+    id: "salud",
+    chip: "Gasto en salud",
+    etiqueta: "Salud",
+    valor: "gasta de su bolsillo",
+    icono: "💊",
+    tone: "blue",
+    re: /(droguer|médic|medico|salud|enferm|remedio)/,
+  },
+  {
+    id: "independiente",
+    chip: "Independiente",
+    etiqueta: "Trabajo",
+    valor: "independiente",
+    icono: "💼",
+    tone: "graphite",
+    re: /(independiente|freelance|por mi cuenta|sin empleo|no tengo empleo)/,
+  },
+];
+
+function senalesActivas(req: CerebroRequest): typeof SENALES {
+  const t = textoCliente(req);
+  return SENALES.filter((s) => s.re.test(t));
+}
+
 /** Chips de perfil derivados de las keywords que soltó el cliente. */
 function tagsDe(req: CerebroRequest): CerebroTag[] {
-  const t = textoCliente(req);
-  const tags: CerebroTag[] = [];
-  if (/(hij|esposa|esposo|mam|pap|depende|familia)/.test(t))
-    tags.push({ id: "dependientes", label: "Con dependientes", icon: "👨‍👩‍👧", tone: "blue" });
-  if (/(perro|gato|mascota|firulais)/.test(t))
-    tags.push({ id: "mascota", label: "Tiene mascota", icon: "🐶", tone: "yellow" });
-  if (/(moto|carro|vehículo|vehiculo|yamaha)/.test(t))
-    tags.push({ id: "vehiculo", label: "Tiene vehículo", icon: "🏍️", tone: "graphite" });
-  if (/(arriend|arrend|casa|apartamento|hogar)/.test(t))
-    tags.push({ id: "hogar", label: "Cuida su hogar", icon: "🏠", tone: "olive" });
-  if (/(droguer|médic|medico|salud|enferm|remedio)/.test(t))
-    tags.push({ id: "salud", label: "Gasto en salud", icon: "💊", tone: "blue" });
-  if (/(independiente|freelance|por mi cuenta|sin empleo|no tengo empleo)/.test(t))
-    tags.push({ id: "independiente", label: "Independiente", icon: "💼", tone: "graphite" });
+  const tags: CerebroTag[] = senalesActivas(req).map((s) => ({
+    id: s.id,
+    label: s.chip,
+    icon: s.icono,
+    tone: s.tone,
+  }));
   const pres = req.presupuesto;
   if (pres && pres > 0)
     tags.push({
@@ -235,6 +327,18 @@ function tagsDe(req: CerebroRequest): CerebroTag[] {
       tone: "blue",
     });
   return tags;
+}
+
+/** Lo mismo, en el shape que el admin pinta bajo "De la conversación". */
+function hechosDe(
+  req: CerebroRequest
+): { id: string; etiqueta: string; valor: string; icono: string }[] {
+  return senalesActivas(req).map((s) => ({
+    id: s.id,
+    etiqueta: s.etiqueta,
+    valor: s.valor,
+    icono: s.icono,
+  }));
 }
 
 /** Ranking en vivo de las familias contra el perfil + presupuesto. */
@@ -314,6 +418,17 @@ function razonConversacion(req: CerebroRequest): string {
 
 function afirma(texto: string): boolean {
   return /(s[íi]\b|acepto|lo quiero|me sirve|dale|de acuerdo|contrat|listo|cerr)/i.test(
+    texto
+  );
+}
+
+/**
+ * Rechazo definitivo, no una objeción. "Está caro" o "lo pienso" NO entran acá
+ * a propósito: eso sigue siendo negociación, y marcar el lead como perdido ahí
+ * lo saca del pipeline cuando todavía se puede cerrar.
+ */
+function rechaza(texto: string): boolean {
+  return /(no me interesa|no quiero|no gracias|d[eé]jalo as[íi]|no me vuelvan|no sigamos|olv[ií]dalo)/i.test(
     texto
   );
 }
