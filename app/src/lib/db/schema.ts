@@ -202,6 +202,8 @@ export const conversation = pgTable(
     }),
     lastInboundAt: timestamp("last_inbound_at"),
     lastMessageAt: timestamp("last_message_at"),
+    /** "Cuánto puedo pagar al mes" (COP) del slider del web-chat; alimenta al cerebro. */
+    presupuesto: integer("presupuesto"),
     unreadCount: integer("unread_count").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

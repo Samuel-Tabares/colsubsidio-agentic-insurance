@@ -31,6 +31,8 @@ export async function GET(req: Request) {
       conversationId: session.conversationId,
       canal: session.canal,
       mensajes,
+      analisis: session.analisis,
+      presupuesto: session.presupuesto,
     });
   } catch (err) {
     console.error("[channels/web] sesión falló:", err);

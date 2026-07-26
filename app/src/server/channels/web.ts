@@ -30,7 +30,27 @@ export async function ensureSession(clienteId: string, canal: Canal) {
     contactId: contact.id,
     conversationId: conversation.id,
     canal: conversation.channel,
+    analisis: contact.analisis ?? null,
+    presupuesto: conversation.presupuesto ?? null,
   };
+}
+
+/**
+ * Guarda el "cuánto puedo pagar al mes" del slider en la conversación. NO
+ * dispara turno del bot (se aplica en el siguiente mensaje); evita spam por
+ * cada arrastre del slider.
+ */
+export async function setPresupuesto(
+  clienteId: string,
+  canal: Canal,
+  presupuesto: number
+): Promise<void> {
+  const db = getDb();
+  const session = await ensureSession(clienteId, canal);
+  await db
+    .update(schema.conversation)
+    .set({ presupuesto, updatedAt: new Date() })
+    .where(eq(schema.conversation.id, session.conversationId));
 }
 
 /** Historial completo de la conversación de un `id`, para arranque/handoff. */

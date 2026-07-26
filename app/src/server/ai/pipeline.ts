@@ -242,7 +242,11 @@ async function runCerebroTurn(
 
   // clienteId opaco = contact.phone (celular en WhatsApp, id generado en web).
   const contactRows = await db
-    .select({ id: schema.contact.id, phone: schema.contact.phone })
+    .select({
+      id: schema.contact.id,
+      phone: schema.contact.phone,
+      analisis: schema.contact.analisis,
+    })
     .from(schema.contact)
     .where(eq(schema.contact.id, conversation.contactId))
     .limit(1);
@@ -253,6 +257,7 @@ async function runCerebroTurn(
     clienteId: contact.phone,
     canal: conversation.channel,
     historial,
+    presupuesto: conversation.presupuesto ?? undefined,
   });
   if (!result.ok) {
     if (result.error === "not_active") return;
@@ -285,15 +290,29 @@ async function runCerebroTurn(
     }
   }
 
-  if (data.analisis) {
+  // Rieles del web-chat: tags/ranking (top-level) se guardan DENTRO de analisis,
+  // fusionados con lo previo para no perder resumen/familia entre turnos, y se
+  // empujan en vivo por SSE. Los turnos de discovery traen tags/ranking sin analisis.
+  if (data.analisis || data.tags || data.ranking) {
+    const prev = (contact.analisis ?? {}) as Record<string, unknown>;
+    const analisis: Record<string, unknown> = {
+      ...prev,
+      ...(data.analisis ?? {}),
+      ...(data.tags ? { tags: data.tags } : {}),
+      ...(data.ranking ? { ranking: data.ranking } : {}),
+    };
     await db
       .update(schema.contact)
       .set({
-        analisis: data.analisis,
-        analisisResumen: data.analisis.resumen ?? null,
+        analisis,
+        ...(data.analisis?.resumen ? { analisisResumen: data.analisis.resumen } : {}),
         updatedAt: new Date(),
       })
       .where(eq(schema.contact.id, conversation.contactId));
+    publish(organizationId, {
+      type: "analisis.updated",
+      data: { conversationId: conversation.id, analisis },
+    });
   }
 
   if (data.handoff) {

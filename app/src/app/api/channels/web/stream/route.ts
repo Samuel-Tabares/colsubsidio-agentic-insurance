@@ -42,6 +42,9 @@ export async function GET(req: Request) {
           const c = (event.data as { conversation?: { id?: string } }).conversation;
           return c?.id === conversationId;
         }
+        if (event.type === "analisis.updated") {
+          return (event.data as { conversationId?: string }).conversationId === conversationId;
+        }
         return false;
       };
 
