@@ -8,6 +8,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **CRM phases the agent actually understands.** The funnel stage used to be a side effect of which tool the brain happened to call that turn, so a lead already in *Cotización / negociación* fell back to *Análisis* every time the recommendation was re-evaluated, and *Cierre ganado* / *Cierre perdido* were never reachable at all — the agent could not close a deal either way. Stages now declare an owner: the agent runs **Prospecto → Análisis → Cotización / negociación → Cierre ganado**, plus **Cierre perdido** from any open stage, while *En suscripción* and *Póliza emitida* stay manual. The channel enforces it: no moving backwards, no pushing into a manual stage, and no yanking a lead a human already advanced by hand
+- **The agent now hears what you tell it, not just what the database says.** Facts a person shares mid-conversation (a dog, who depends on them, that they are self-employed, that they rent) are captured turn by turn, kept separate from the seed profile, fed back to the agent so it never re-asks something it was already told, and shown under **"De la conversación"** in the inbox panel and the client detail. Previously the profile could only ever mirror the affiliate row, and a person with no resolved serie left no profile trace at all
 - **Cerebro contract** — added a `perfil` field to `CerebroResponse` and wired it in the agent pipeline to write into `contact.perfilCrudo` (the admin's read-only "Datos del perfil" panel). Previously the contract had no way for the brain to hand back structured affiliate data, so that panel could only ever show seed data, never anything from a live conversation
 
 ### Added

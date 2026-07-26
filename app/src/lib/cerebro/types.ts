@@ -29,6 +29,10 @@ export const CerebroRequest = z.object({
   perfil: z.record(z.unknown()).nullable().optional(),
   /** "Cuánto puedo pagar al mes" (COP) del slider de presupuesto; afina la recomendación. */
   presupuesto: z.number().optional(),
+  /** Etapa del funnel en la que está el lead HOY (nombre exacto, ver lib/funnel).
+   * El cerebro es sin estado: sin esto no puede decidir "avanzar" vs "quedarse",
+   * solo adivinar una fase desde cero en cada turno. */
+  faseActual: z.string().nullable().optional(),
 });
 export type CerebroRequest = z.infer<typeof CerebroRequest>;
 

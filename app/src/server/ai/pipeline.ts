@@ -10,6 +10,7 @@ import { AgentAction, degradeAction, resolveStage, type AgentActionType } from "
 import { matchesHandoffIntent } from "@/server/ai/handoff";
 import { buildAgentSystemPrompt } from "@/server/ai/prompts";
 import { decidirTurno, isCerebroActive } from "@/lib/cerebro";
+import { puedeMoverAgente } from "@/lib/funnel";
 import { persistLocalOutbound } from "@/server/inbox/local-outbound";
 
 /**
@@ -190,11 +191,9 @@ export async function runAgentTurn(conversationId: string): Promise<void> {
     if (!stage) {
       action = degradeAction(action);
     } else {
-      await moveLeadToStage(organizationId, conversation.contactId, stage.id);
-      publish(organizationId, {
-        type: "conversation.updated",
-        data: { conversation: { id: conversationId } },
-      });
+      // Mismo guardrail de funnel que el camino del cerebro: el agente no
+      // rebota leads hacia atrás ni toca las etapas manuales.
+      await aplicarFaseDelCerebro(conversation, stage.name);
       if (action.reply) {
         await deliverReply(conversation, action.reply);
       }
@@ -265,6 +264,7 @@ async function runCerebroTurn(
     historial,
     perfil: (contact.perfilCrudo as Record<string, unknown> | null) ?? null,
     presupuesto: conversation.presupuesto ?? undefined,
+    faseActual: await faseActualDelLead(conversation.contactId),
   });
   if (!result.ok) {
     if (result.error === "not_active") return;
@@ -283,18 +283,7 @@ async function runCerebroTurn(
   }
 
   if (data.fase) {
-    const stages = await db
-      .select({ id: schema.pipelineStage.id, name: schema.pipelineStage.name })
-      .from(schema.pipelineStage)
-      .where(eq(schema.pipelineStage.organizationId, organizationId));
-    const stage = resolveStage(data.fase, stages);
-    if (stage) {
-      await moveLeadToStage(organizationId, conversation.contactId, stage.id);
-      publish(organizationId, {
-        type: "conversation.updated",
-        data: { conversation: { id: conversation.id } },
-      });
-    }
+    await aplicarFaseDelCerebro(conversation, data.fase);
   }
 
   // Rieles del web-chat: tags/ranking (top-level) se guardan DENTRO de analisis,
@@ -465,6 +454,54 @@ async function moveLeadToStage(
     .update(schema.lead)
     .set({ stageId, updatedAt: new Date(), lastActivityAt: new Date() })
     .where(eq(schema.lead.contactId, contactId));
+}
+
+/** Etapa actual del lead del contacto (nombre de funnel), o null si no tiene. */
+async function faseActualDelLead(contactId: string): Promise<string | null> {
+  const db = getDb();
+  const rows = await db
+    .select({ name: schema.pipelineStage.name })
+    .from(schema.lead)
+    .innerJoin(schema.pipelineStage, eq(schema.lead.stageId, schema.pipelineStage.id))
+    .where(eq(schema.lead.contactId, contactId))
+    .limit(1);
+  return rows[0]?.name ?? null;
+}
+
+/**
+ * Mueve el lead SOLO si el agente tiene permiso para hacerlo (ver
+ * `puedeMoverAgente`). El cerebro emite una `fase` por turno derivada de lo que
+ * pasó en ese turno; sin este guardrail un turno que vuelve a llamar
+ * `recomendar_seguro` devuelve "Análisis" y arrastra hacia atrás a un lead que
+ * ya estaba en negociación, o peor, saca de "En suscripción" a uno que un
+ * humano ya había avanzado a mano.
+ */
+async function aplicarFaseDelCerebro(
+  conversation: Conversation,
+  fase: string
+): Promise<void> {
+  const db = getDb();
+  const organizationId = conversation.organizationId;
+  const stages = await db
+    .select({ id: schema.pipelineStage.id, name: schema.pipelineStage.name })
+    .from(schema.pipelineStage)
+    .where(eq(schema.pipelineStage.organizationId, organizationId));
+  const stage = resolveStage(fase, stages);
+  if (!stage) return;
+
+  const desde = await faseActualDelLead(conversation.contactId);
+  if (!puedeMoverAgente(desde, stage.name)) {
+    console.log(
+      `[cerebro] fase ignorada: "${desde ?? "(sin etapa)"}" → "${stage.name}" no la puede hacer el agente`
+    );
+    return;
+  }
+
+  await moveLeadToStage(organizationId, conversation.contactId, stage.id);
+  publish(organizationId, {
+    type: "conversation.updated",
+    data: { conversation: { id: conversation.id } },
+  });
 }
 
 async function appendLeadNote(
