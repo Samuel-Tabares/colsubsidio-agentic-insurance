@@ -47,6 +47,36 @@ Hackathon-sponsored tools the team intends to use (get them for the sponsor perk
 
 Update this table as the team locks in decisions — don't let it drift out of sync with reality.
 
+## App (superficies + backend) — `app/`
+
+Las superficies de Samuel y su backend viven en **`app/`**, un fork vendorizado de **Vocero CRM**
+(`kevinrivm/vocero-crm`, MIT — Next.js 15 App Router + Drizzle + Postgres + Better Auth + SSE).
+Decisión de stack tomada el 2026-07-25: **TypeScript/Next.js sobre Vocero**, no un backend Python
+aparte, porque Vocero ya trae hecho el admin (bandeja, pipeline, toggle de handoff humano), la
+tubería de ingesta de canal y un adaptador de IA. El ETL de `scripts/` (Python) NO se toca — es
+otro frente.
+
+Se construyó insertando tres seams, no reescribiendo:
+- **Cerebro** (`app/src/lib/cerebro/`): el RAG+agente de Jhon vive en OTRO repo y se llama por HTTP.
+  `decidirTurno(req)` reemplaza el paso de decisión del LLM nativo en `app/src/server/ai/pipeline.ts`.
+  Modo por env **`CEREBRO_MODE`**: `stub` (recorrido guionizado local, demo hoy) · `external`
+  (HTTP a `CEREBRO_URL`) · `vocero` (LLM nativo). Contrato en `app/src/lib/cerebro/types.ts`.
+- **Canal** (`conversation.channel`): se generalizó la tubería WhatsApp-only para llevar también
+  `web`. Endpoints públicos sin login `/api/channels/web/{messages,session,stream}` (arranque en
+  frío + handoff por id).
+- **Funnel de seguros** (`app/src/lib/funnel.ts`), sembrado por org.
+
+**Estado:** web-chat en `/chat` (UI placeholder, pendiente el diseño de Sarah) + admin (`/inbox`,
+`/pipeline`) funcionando de punta a punta con el stub. Corre contra Postgres local (`vocero`), no
+Supabase todavía (migración `app/drizzle/0001_*.sql` lista para aplicar). Gate verde: typecheck +
+lint + build + 94 tests. **WhatsApp queda como proyecto futuro** (superficie `/wa` retirada a
+pedido de Samuel; el backend sigue channel-agnostic, así que retomarlo es barato). Detalle vivo en
+la memoria de proyecto `app-surfaces-on-vocero`.
+
+> Nota: `app/CLAUDE.md` es la guía propia de Vocero (constitución, convenciones). Vale para trabajar
+> dentro de `app/`. La única licencia que se le tomó a esa constitución: el cerebro externo es una
+> excepción documentada a su regla de "soberanía de dependencias".
+
 ## Data pipeline
 
 - **Superseded 2026-07-23**: the team received a new source file, `Usos_Productos_Afiliados_SIN_ID.xlsx`, which fully replaces the earlier 1.56M-row CSV (now deleted — it was untracked/gitignored, so nothing was lost from git). This is not an incremental update: `SERIE` is a fresh 1..500000 sequence, unrelated to the old IDs.
@@ -92,7 +122,7 @@ Note: the `brand-guidelines` skill in the library is written for Sentry's own br
 
 Preguntas abiertas que bloquean o afinan el stack — actualizar esta lista (tachar/mover a la tabla de Stack) a medida que el equipo decida, no dejarla desincronizada:
 
-- **Frontend**: ¿hay una UI web además de WhatsApp (ej. Lovable para algo complementario), o el flujo vive completamente dentro de WhatsApp? Dueño: Jhon/Sarah, no decidido aquí.
+- ~~**Frontend**: ¿hay una UI web además de WhatsApp?~~ **Resuelto (2026-07-25):** el flujo vive en una web-chat (`app/`, `/chat`) sobre Vocero/Next.js; WhatsApp queda como proyecto futuro. Ver sección "App (superficies + backend)".
 - **Autenticación**: ¿flujo anónimo hasta el cierre, o login desde el inicio contra la base de 1.56M afiliados? Decisión de equipo, pendiente.
 - **Hosting**: depende de qué beneficios/créditos entrega el hackathon exactamente — falta confirmar qué patrocinador cubre qué (DigitalOcean, Supabase, otros).
 - **Houston AI vs. Gemini API**: ¿Houston orquesta el agente completo (no-code) y Gemini es el modelo subyacente, o son piezas separadas del pipeline? Falta definir la división de responsabilidad.

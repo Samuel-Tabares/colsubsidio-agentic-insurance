@@ -55,18 +55,26 @@ la respuesta está en pantalla, no en el pitch.
 - Una base PostgreSQL (Supabase)
 - Una API key del proveedor LLM
 
-### Instalación
+### La app (web-chat + admin) — `app/`
+
+La aplicación vive en `app/` (fork de Vocero CRM sobre Next.js 15). Corre contra Postgres local:
 
 ```bash
-git clone https://github.com/Samuel-Tabares/colsubsidio-agentic-insurance.git
-cd colsubsidio-agentic-insurance
+cd app
 pnpm install
-cp .env.example .env    # completar credenciales
-pnpm dev
+cp .env.example .env    # completar; para dev basta DATABASE_URL a un Postgres local
+pnpm db:migrate         # aplica el esquema (incl. canal, perfil, funnel)
+pnpm dev                # http://localhost:3000
 ```
 
-> _Los pasos de instalación de la app se cierran cuando el scaffold del frontend esté montado. Por
-> ahora el repo tiene la tubería de datos y la documentación; ver abajo._
+- **Web-chat:** `http://localhost:3000/chat` (público, sin login).
+- **Admin (CRM + conversaciones):** regístrate en `/register` → `/inbox` y `/pipeline`.
+- **Cerebro:** por defecto `CEREBRO_MODE=stub` (recorrido guionizado local). Para conectar el RAG
+  real de Jhon (otro repo): `CEREBRO_MODE=external` + `CEREBRO_URL`. Detalle en `app/CLAUDE.md` y en
+  la sección "App" de [CLAUDE.md](CLAUDE.md).
+
+> _WhatsApp queda como proyecto futuro; el backend ya es channel-agnostic para retomarlo sin
+> reescribir._
 
 ### Correr el pipeline de datos
 
@@ -113,9 +121,11 @@ construyó el RAG en Supabase y sus caveats de calidad: [CATALOGO-Y-RAG.md](CATA
 - [x] Documentación de contexto, reglas de propensión y UX
 - [x] Scrape y estructura del catálogo de seguros + RAG
 - [ ] `reglas.json` de propensión desde el análisis
-- [ ] El cerebro (`recomendar()` + agente)
-- [ ] Web y simulador de WhatsApp sobre el diseño de las 3 vistas
-- [ ] Vista administrativa sobre Vocero
+- [ ] El cerebro (`recomendar()` + agente) — repo aparte; la app se conecta por `CEREBRO_URL`
+- [x] Backend de las superficies + admin sobre Vocero (`app/`), corriendo con cerebro stub
+- [ ] Web-chat sobre el diseño de Sarah (hoy UI placeholder en `/chat`)
+- [ ] Conectar la app al cerebro real (`CEREBRO_MODE=external`)
+- [ ] _Futuro:_ simulador de WhatsApp (backend ya channel-agnostic)
 - [ ] Despliegue y README de arranque en < 2 minutos
 - [ ] _Ideal:_ PDF de resumen al cierre, pantalla de "a quién contactar hoy", laboratorio de agente
 
