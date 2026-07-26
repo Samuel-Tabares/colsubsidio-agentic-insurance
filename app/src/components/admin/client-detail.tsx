@@ -74,6 +74,25 @@ export function ClientDetail({
                     {perfil.grupoFamiliar}
                   </Row>
                 )}
+                {/* Lo que dijo en el chat, aparte de lo que trae la base. */}
+                {(perfil.hechos?.length ?? 0) > 0 && (
+                  <div className="mt-3 space-y-2 border-t pt-3">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-text-3">
+                      De la conversación
+                    </p>
+                    {perfil.hechos!.map((h) => (
+                      <div key={h.id} className="flex items-start gap-2">
+                        <span className="w-4 shrink-0 text-center leading-5">
+                          {h.icono ?? "•"}
+                        </span>
+                        <span>
+                          <span className="text-text-3">{h.etiqueta}: </span>
+                          {h.valor}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {perfil.seguroInteres && perfil.seguroInteres !== "—" && (
                   <div className="pt-2 text-xs text-text-3">
                     Seguro de interés:{" "}

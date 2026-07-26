@@ -266,6 +266,7 @@ export function ContactPanel({
             perfil.ciudad ||
             perfil.categoria ||
             perfil.grupoFamiliar ||
+            (perfil.hechos?.length ?? 0) > 0 ||
             (perfil.seguroInteres && perfil.seguroInteres !== "—")) ? (
             <div className="space-y-2 text-[13px]">
               {perfil.edad != null && (
@@ -290,6 +291,27 @@ export function ContactPanel({
                 <div className="flex items-start gap-2">
                   <Users className="mt-0.5 h-3.5 w-3.5 text-text-3" strokeWidth={1.7} />
                   <span>{perfil.grupoFamiliar}</span>
+                </div>
+              )}
+              {/* Lo que la persona contó en el chat. Aparte de los campos de
+                  arriba a propósito: esos vienen de la base de afiliados, estos
+                  los dijo en vivo y son los que muestran que se le escuchó. */}
+              {(perfil.hechos?.length ?? 0) > 0 && (
+                <div className="mt-3 space-y-2 border-t pt-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-text-3">
+                    De la conversación
+                  </p>
+                  {perfil.hechos!.map((h) => (
+                    <div key={h.id} className="flex items-start gap-2">
+                      <span className="w-3.5 shrink-0 text-center text-[13px] leading-5">
+                        {h.icono ?? "•"}
+                      </span>
+                      <span>
+                        <span className="text-text-3">{h.etiqueta}: </span>
+                        {h.valor}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
               {perfil.seguroInteres && perfil.seguroInteres !== "—" && (

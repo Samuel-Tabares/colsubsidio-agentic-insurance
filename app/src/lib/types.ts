@@ -45,9 +45,25 @@ export type StageDto = {
 };
 
 /**
+ * Un dato que la persona contó en la conversación (mascota, dependientes,
+ * trabajo). Lo extrae el cerebro turno a turno; NO viene de la base de
+ * afiliados, y por eso se muestra aparte: es la prueba de que se le escuchó.
+ */
+export type PerfilHecho = {
+  id: string;
+  etiqueta: string;
+  valor: string;
+  icono?: string;
+};
+
+/**
  * Perfil del afiliado (Colsubsidio). Vive en `contact.perfilCrudo` (jsonb) y lo
  * llena el cerebro de Jhon vía RAG; el admin lo muestra en solo lectura. Todos
  * los campos son opcionales: un prospecto recién llegado aún no tiene perfil.
+ *
+ * Dos fuentes conviven acá: los campos planos salen de la base de afiliados (la
+ * semilla), `hechos` sale de lo que la persona dice en vivo. La semilla es la
+ * base, los hechos son lo que la actualiza.
  */
 export type Perfil = {
   edad?: number;
@@ -55,6 +71,7 @@ export type Perfil = {
   categoria?: string;
   grupoFamiliar?: string;
   seguroInteres?: string;
+  hechos?: PerfilHecho[];
 };
 
 /** Familia puntuada en el ranking en vivo (mismo shape que `CerebroRankItem`). */
