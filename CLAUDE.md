@@ -60,18 +60,26 @@ Se construyó insertando tres seams, no reescribiendo:
 - **Cerebro** (`app/src/lib/cerebro/`): el RAG+agente de Jhon vive en OTRO repo y se llama por HTTP.
   `decidirTurno(req)` reemplaza el paso de decisión del LLM nativo en `app/src/server/ai/pipeline.ts`.
   Modo por env **`CEREBRO_MODE`**: `stub` (recorrido guionizado local, demo hoy) · `external`
-  (HTTP a `CEREBRO_URL`) · `vocero` (LLM nativo). Contrato en `app/src/lib/cerebro/types.ts`.
+  (HTTP a `CEREBRO_URL`) · `vocero` (LLM nativo). Contrato en `app/src/lib/cerebro/types.ts`. El
+  contrato ya lleva **`presupuesto`** (entra) y **`tags`/`ranking`** (salen, opcionales) además de
+  `analisis` — hoy los produce el stub; el cerebro real de Jhon los llenará vía LLM sin tocar el canal.
 - **Canal** (`conversation.channel`): se generalizó la tubería WhatsApp-only para llevar también
-  `web`. Endpoints públicos sin login `/api/channels/web/{messages,session,stream}` (arranque en
-  frío + handoff por id).
+  `web`. Endpoints públicos sin login `/api/channels/web/{messages,session,stream,budget}` (arranque
+  en frío + handoff por id + presupuesto del slider). SSE emite `message.new` y `analisis.updated`
+  (tags/ranking en vivo).
 - **Funnel de seguros** (`app/src/lib/funnel.ts`), sembrado por org.
 
-**Estado:** web-chat en `/chat` (UI placeholder, pendiente el diseño de Sarah) + admin (`/inbox`,
+**Estado:** web-chat en `/chat` con el **diseño real de Sarah** ya portado (fork de Lovable en
+`frontend/`, superficie `app/src/components/surface-asegura.tsx` + hook `use-asegura-channel`) y
+**cableado de verdad**: chat por SSE, tags de perfil + ranking en vivo desde `analisis`, slider de
+presupuesto que persiste (`conversation.presupuesto`) y ajusta la recomendación. Admin (`/inbox`,
 `/pipeline`) funcionando de punta a punta con el stub. Corre contra Postgres local (`vocero`), no
-Supabase todavía (migración `app/drizzle/0001_*.sql` lista para aplicar). Gate verde: typecheck +
-lint + build + 94 tests. **WhatsApp queda como proyecto futuro** (superficie `/wa` retirada a
-pedido de Samuel; el backend sigue channel-agnostic, así que retomarlo es barato). Detalle vivo en
-la memoria de proyecto `app-surfaces-on-vocero`.
+Supabase todavía (migraciones `app/drizzle/0001_*` + `0002_*` — esta última agrega `presupuesto`).
+Gate verde: typecheck + lint + build + 97 tests, más self-test de comportamiento de punta a punta
+(sesión → tags/ranking → presupuesto → recomendación → comparación → control → cierre) verificado
+por SSE. Voz (ElevenLabs) y "login" de S0 quedan cosméticos, fuera del MVP. **WhatsApp queda como
+proyecto futuro** (el backend sigue channel-agnostic). Detalle vivo en la memoria de proyecto
+`app-surfaces-on-vocero`.
 
 > Nota: `app/CLAUDE.md` es la guía propia de Vocero (constitución, convenciones). Vale para trabajar
 > dentro de `app/`. La única licencia que se le tomó a esa constitución: el cerebro externo es una

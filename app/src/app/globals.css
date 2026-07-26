@@ -81,3 +81,65 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/*
+  Web-chat Colsubsidio (superficie pública /chat). Animaciones y slider del
+  diseño de Sarah. NO se toca el fondo global del body — la superficie envuelve
+  su propio mundo claro con `bg-warm-bg`, para no afectar al admin (tema Atlas).
+*/
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+  100% { transform: scale(0.95); opacity: 0.5; }
+}
+.animate-pulse-ring { animation: pulse-ring 2.6s var(--ease-out-expo) infinite; }
+
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-in { animation: slide-up 0.55s var(--ease-out-expo) both; }
+
+@keyframes soft-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.animate-soft-bounce { animation: soft-bounce 2s ease-in-out infinite; }
+
+/* Slider de presupuesto de marca */
+.brand-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: linear-gradient(
+    to right,
+    #0067b1 0%,
+    #0067b1 var(--val, 30%),
+    color-mix(in oklab, #575756 15%, transparent) var(--val, 30%)
+  );
+  border-radius: 999px;
+  outline: none;
+}
+.brand-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 26px;
+  width: 26px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid #0067b1;
+  box-shadow: 0 4px 12px rgba(0, 103, 177, 0.25);
+  cursor: pointer;
+}
+.brand-slider::-moz-range-thumb {
+  height: 26px;
+  width: 26px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid #0067b1;
+  box-shadow: 0 4px 12px rgba(0, 103, 177, 0.25);
+  cursor: pointer;
+}

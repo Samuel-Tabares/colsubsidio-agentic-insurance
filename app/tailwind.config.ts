@@ -52,7 +52,13 @@ const config: Config = {
           soft: "var(--accent-soft)",
           tint: "var(--accent-tint)",
           text: "var(--accent-text)",
+          // Paleta Colsubsidio del web-chat (valores exactos del diseño de Sarah).
+          yellow: "#ffd000",
+          blue: "#0067b1",
+          graphite: "#575756",
         },
+        "warm-bg": "#f8f7f2",
+        "warm-bg-soft": "#fbfaf5",
         "text-2": "var(--text-2)",
         "text-3": "var(--text-3)",
         "text-4": "var(--text-4)",
@@ -74,6 +80,9 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-geist)", "Hanken Grotesk", "-apple-system", "sans-serif"],
+        // Web-chat Colsubsidio: Poppins para titulares, Inter para cuerpo.
+        display: ["var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
+        body: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
     },
   },

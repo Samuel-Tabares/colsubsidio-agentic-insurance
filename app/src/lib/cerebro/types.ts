@@ -27,6 +27,8 @@ export const CerebroRequest = z.object({
   historial: z.array(CerebroHistMsg),
   /** Perfil crudo del afiliado si ya se conoce (lo llena el cerebro por su lado). */
   perfil: z.record(z.unknown()).nullable().optional(),
+  /** "Cuánto puedo pagar al mes" (COP) del slider de presupuesto; afina la recomendación. */
+  presupuesto: z.number().optional(),
 });
 export type CerebroRequest = z.infer<typeof CerebroRequest>;
 
@@ -45,6 +47,26 @@ export const CerebroMensaje = z.object({
 });
 export type CerebroMensaje = z.infer<typeof CerebroMensaje>;
 
+/** Chip de perfil que el asesor "va guardando" del cliente (riel izquierdo del web-chat). */
+export const CerebroTag = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string().optional(),
+  tone: z.enum(["blue", "yellow", "graphite", "olive"]).optional(),
+});
+export type CerebroTag = z.infer<typeof CerebroTag>;
+
+/** Una familia puntuada para el ranking en vivo con % match (riel derecho del web-chat). */
+export const CerebroRankItem = z.object({
+  familia: z.string(),
+  nombre: z.string(),
+  aseguradora: z.string().optional(),
+  match: z.number(),
+  blurb: z.string().optional(),
+  prima_mensual: z.number().optional(),
+});
+export type CerebroRankItem = z.infer<typeof CerebroRankItem>;
+
 export const CerebroResponse = z.object({
   mensajes: z.array(CerebroMensaje).min(1),
   /** Nombre EXACTO de una etapa del funnel (ver lib/funnel) para mover el lead. */
@@ -58,6 +80,10 @@ export const CerebroResponse = z.object({
     })
     .catchall(z.unknown())
     .optional(),
+  /** Chips de perfil para el riel izquierdo; opcional (el cerebro real puede omitirlo). */
+  tags: z.array(CerebroTag).optional(),
+  /** Ranking de familias con % match para el riel derecho; opcional. */
+  ranking: z.array(CerebroRankItem).optional(),
   /** Si viene, la conversación pasa a atención humana tras entregar los mensajes. */
   handoff: z
     .object({ motivo: z.string().optional(), despedida: z.string().optional() })
