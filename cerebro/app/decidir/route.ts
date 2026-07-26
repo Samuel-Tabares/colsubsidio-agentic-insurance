@@ -10,7 +10,6 @@ import {
   faseMasAvanzada,
   type FaseAgente,
 } from "@/lib/estado";
-import type { Recomendacion } from "@/lib/recomendar";
 import type { ProductoCatalogo } from "@/lib/catalogo";
 
 export const dynamic = "force-dynamic";
@@ -70,14 +69,11 @@ export async function POST(req: Request): Promise<Response> {
 
   const respuesta: CerebroResponse = { mensajes: [{ tipo: "text", texto: turno.texto }] };
 
-  // Última salida de cada tool en el turno, derivada de la traza cruda.
-  const recomendacion = turno.toolResults
-    .filter((t) => t.nombre === "recomendar_seguro")
-    .map((t) => t.resultado)
-    .filter(
-      (r): r is Recomendacion => typeof r === "object" && r !== null && "familia" in r
-    )
-    .at(-1);
+  // La recomendación ya viene calculada por decidirTurno (función pura del
+  // perfil, ver agente.ts) — determinista en el 100% de los turnos con perfil,
+  // no depende de que el modelo haya llamado ninguna tool. Solo buscar_producto
+  // sigue siendo tool real, por eso esa sí se sigue leyendo de toolResults.
+  const recomendacion = turno.recomendacion;
   const productos = turno.toolResults
     .filter((t) => t.nombre === "buscar_producto")
     .map((t) => t.resultado)
@@ -87,18 +83,23 @@ export async function POST(req: Request): Promise<Response> {
     )
     .at(-1)?.productos;
 
-  // Vocero mueve el pipeline y pinta el CRM con lo que devolvamos acá — el
-  // agente no llama ninguna tool "de Vocero", solo decide cuándo usar
-  // recomendar_seguro/buscar_producto; este mapeo traduce esas dos tools al
-  // contrato que Vocero ya sabe aplicar (mover fase, guardar perfil/análisis).
+  // Vocero mueve el pipeline y pinta el CRM con lo que devolvamos acá; este
+  // mapeo traduce lo que salió del turno al contrato que Vocero ya sabe aplicar
+  // (mover fase, guardar perfil/análisis).
   // El perfil sale de dos fuentes que NO se pisan: la base de afiliados es la
   // base (ciudad, salario, grupo familiar) y los `hechos` son lo que la persona
   // contó en vivo. Se emite aunque no haya serie resuelta: alguien sin perfil en
   // la base igual cuenta cosas de su vida, y eso tiene que llegar al CRM.
+  // `serie` viaja junto con los campos de display: sin ella,
+  // resolverPerfilDeVocero (que exige serie numérica) nunca reconoce este perfil
+  // en el siguiente turno y la identidad vuelve a depender del escaneo de las
+  // últimas 20 líneas de historial (identidad.ts), que se pierde en
+  // conversaciones largas.
   if (perfil || hechos.length > 0) {
     respuesta.perfil = {
       ...(perfil
         ? {
+            serie: perfil.serie,
             ciudad: perfil.ciudad_afiliado ?? undefined,
             categoria: perfil.rango_salarial ?? undefined,
             grupoFamiliar: perfil.segmento_grupo_familiar ?? undefined,
@@ -150,9 +151,7 @@ export async function POST(req: Request): Promise<Response> {
   // único que sabe si la persona aceptó o se fue. Las tools solo ponen un PISO:
   // si en este turno se mostraron productos, la conversación ya está al menos en
   // negociación, diga lo que diga el clasificador. Se toma la más avanzada de
-  // las dos. Antes la fase salía SOLO de qué tool se llamó, y como
-  // `recomendar_seguro` se vuelve a llamar en turnos posteriores, un lead ya en
-  // negociación caía de vuelta a "Análisis" cada vez.
+  // las dos.
   const piso: FaseAgente | null =
     productos && productos.length > 0
       ? "Cotización / negociación"

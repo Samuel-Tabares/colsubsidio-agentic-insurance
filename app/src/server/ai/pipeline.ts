@@ -91,7 +91,12 @@ async function executeTurn(conversationId: string): Promise<void> {
  * debounce 0 y sin pasar por el coalesce).
  */
 export async function runAgentTurn(conversationId: string): Promise<void> {
-  if (!isAiConfigured() && !isCerebroActive()) return;
+  if (!isAiConfigured() && !isCerebroActive()) {
+    console.error(
+      "[agente] turno abortado: ni el cerebro (CEREBRO_MODE/CEREBRO_URL) ni el LLM nativo (OPENROUTER_*) están configurados"
+    );
+    return;
+  }
 
   const db = getDb();
   const convRows = await db
