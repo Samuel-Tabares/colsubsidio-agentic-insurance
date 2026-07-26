@@ -148,16 +148,18 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // La fase la decide la lectura de la conversación (lib/estado.ts), que es lo
-  // único que sabe si la persona aceptó o se fue. Las tools solo ponen un PISO:
-  // si en este turno se mostraron productos, la conversación ya está al menos en
-  // negociación, diga lo que diga el clasificador. Se toma la más avanzada de
-  // las dos.
+  // único que sabe si la persona aceptó o se fue. `buscar_producto` solo pone un
+  // PISO: si en este turno se mostraron productos, la conversación ya está al
+  // menos en negociación, diga lo que diga el clasificador. Se toma la más
+  // avanzada de las dos.
+  //
+  // `recomendacion` NO puede ser piso: desde que dejó de ser tool y se calcula
+  // server-side (ver agente.ts), viene llena en TODOS los turnos con serie
+  // resuelta — incluido el saludo. Usarla como piso "Análisis" sacaría de
+  // "Prospecto" a todo el que entra por S0 en su primer mensaje, y como
+  // `puedeMoverAgente` prohíbe retroceder, el lead quedaría atascado adelante.
   const piso: FaseAgente | null =
-    productos && productos.length > 0
-      ? "Cotización / negociación"
-      : recomendacion
-        ? "Análisis"
-        : null;
+    productos && productos.length > 0 ? "Cotización / negociación" : null;
   const fase = faseMasAvanzada(lectura.fase, piso);
   if (fase) respuesta.fase = fase;
 
