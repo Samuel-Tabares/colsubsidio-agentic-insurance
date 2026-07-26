@@ -3,7 +3,6 @@ import { resolverSerie } from "@/lib/identidad";
 import { decidirTurno } from "@/lib/agente";
 import { aTextoPlano } from "@/lib/texto";
 import { getAfiliadoBySerie, type AfiliadoRaw } from "@/lib/perfil";
-import type { Recomendacion } from "@/lib/recomendar";
 import type { ProductoCatalogo } from "@/lib/catalogo";
 
 export const dynamic = "force-dynamic";
@@ -42,14 +41,11 @@ export async function POST(req: Request): Promise<Response> {
 
   const respuesta: CerebroResponse = { mensajes: [{ tipo: "text", texto: turno.texto }] };
 
-  // Última salida de cada tool en el turno, derivada de la traza cruda.
-  const recomendacion = turno.toolResults
-    .filter((t) => t.nombre === "recomendar_seguro")
-    .map((t) => t.resultado)
-    .filter(
-      (r): r is Recomendacion => typeof r === "object" && r !== null && "familia" in r
-    )
-    .at(-1);
+  // La recomendación ya viene calculada por decidirTurno (función pura del
+  // perfil, ver agente.ts) — determinista en el 100% de los turnos con perfil,
+  // no depende de que el modelo haya llamado ninguna tool. Solo buscar_producto
+  // sigue siendo tool real, por eso esa sí se sigue leyendo de toolResults.
+  const recomendacion = turno.recomendacion;
   const productos = turno.toolResults
     .filter((t) => t.nombre === "buscar_producto")
     .map((t) => t.resultado)
@@ -59,12 +55,15 @@ export async function POST(req: Request): Promise<Response> {
     )
     .at(-1)?.productos;
 
-  // Vocero mueve el pipeline y pinta el CRM con lo que devolvamos acá — el
-  // agente no llama ninguna tool "de Vocero", solo decide cuándo usar
-  // recomendar_seguro/buscar_producto; este mapeo traduce esas dos tools al
-  // contrato que Vocero ya sabe aplicar (mover fase, guardar perfil/análisis).
+  // Vocero mueve el pipeline y pinta el CRM con lo que devolvamos acá. Se
+  // manda `serie` junto con los campos de display: sin ella,
+  // resolverPerfilDeVocero (que exige serie numérica) nunca reconoce este
+  // perfil en el siguiente turno y la identidad vuelve a depender del
+  // escaneo de las últimas 20 líneas de historial (identidad.ts), que se
+  // pierde en conversaciones largas.
   if (perfil) {
     respuesta.perfil = {
+      serie: perfil.serie,
       ciudad: perfil.ciudad_afiliado ?? undefined,
       categoria: perfil.rango_salarial ?? undefined,
       grupoFamiliar: perfil.segmento_grupo_familiar ?? undefined,

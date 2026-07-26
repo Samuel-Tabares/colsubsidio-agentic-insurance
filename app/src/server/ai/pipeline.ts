@@ -90,7 +90,12 @@ async function executeTurn(conversationId: string): Promise<void> {
  * debounce 0 y sin pasar por el coalesce).
  */
 export async function runAgentTurn(conversationId: string): Promise<void> {
-  if (!isAiConfigured() && !isCerebroActive()) return;
+  if (!isAiConfigured() && !isCerebroActive()) {
+    console.error(
+      "[agente] turno abortado: ni el cerebro (CEREBRO_MODE/CEREBRO_URL) ni el LLM nativo (OPENROUTER_*) están configurados"
+    );
+    return;
+  }
 
   const db = getDb();
   const convRows = await db
@@ -284,16 +289,34 @@ async function runCerebroTurn(
 
   if (data.fase) {
     const stages = await db
-      .select({ id: schema.pipelineStage.id, name: schema.pipelineStage.name })
+      .select({
+        id: schema.pipelineStage.id,
+        name: schema.pipelineStage.name,
+        position: schema.pipelineStage.position,
+      })
       .from(schema.pipelineStage)
       .where(eq(schema.pipelineStage.organizationId, organizationId));
     const stage = resolveStage(data.fase, stages);
+    // El cerebro recalcula `fase` en cada turno desde cero (ej. vuelve a dar
+    // "Análisis" en cualquier turno con recomendación pero sin productos
+    // todavía mostrados) — sin este guard, un lead que ya llegó a "Cotización
+    // / negociación" retrocedía en el turno siguiente. Solo se mueve el lead
+    // si la etapa destino tiene posición igual o mayor a la actual.
     if (stage) {
-      await moveLeadToStage(organizationId, conversation.contactId, stage.id);
-      publish(organizationId, {
-        type: "conversation.updated",
-        data: { conversation: { id: conversation.id } },
-      });
+      const destino = stages.find((s) => s.id === stage.id);
+      const leadRows = await db
+        .select({ stageId: schema.lead.stageId })
+        .from(schema.lead)
+        .where(eq(schema.lead.contactId, conversation.contactId))
+        .limit(1);
+      const actual = stages.find((s) => s.id === leadRows[0]?.stageId);
+      if (!actual || !destino || destino.position >= actual.position) {
+        await moveLeadToStage(organizationId, conversation.contactId, stage.id);
+        publish(organizationId, {
+          type: "conversation.updated",
+          data: { conversation: { id: conversation.id } },
+        });
+      }
     }
   }
 
