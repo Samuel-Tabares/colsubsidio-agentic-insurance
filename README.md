@@ -1,5 +1,8 @@
 # Asegura — asesor de seguros conversacional para Colsubsidio
 
+[https://web-production-54174.up.railway.app/chat] vista cliente (web-chat)
+[https://web-production-54174.up.railway.app/] vista admin app
+
 > Hackathon Colsubsidio × 30X · Reto 2: venta automatizada de seguros · 22–26 julio 2026, Bogotá.
 
 Llevar a una persona de **"no sé qué seguro necesito"** a **"ya quedé asegurada"** sin que hable con
@@ -46,46 +49,6 @@ la respuesta está en pantalla, no en el pitch.
 
 ---
 
-## Cómo empezar
-
-### Requisitos
-
-- Node.js 20+ y pnpm
-- Una base PostgreSQL (Supabase)
-- Una API key del proveedor LLM
-
-### La app (web-chat + admin) — `app/`
-
-La aplicación vive en `app/` (fork de Vocero CRM sobre Next.js 15). Corre contra Postgres local:
-
-```bash
-cd app
-pnpm install
-cp .env.example .env    # completar; para dev basta DATABASE_URL a un Postgres local
-pnpm db:migrate         # aplica el esquema (incl. canal, perfil, funnel)
-pnpm dev                # http://localhost:3000
-```
-
-- **Web-chat:** `http://localhost:3000/chat` (público, sin login).
-- **Admin (CRM + conversaciones):** regístrate en `/register` → `/inbox` y `/pipeline`.
-- **Cerebro:** por defecto `CEREBRO_MODE=stub` (recorrido guionizado local). Para conectar el RAG
-  real de Jhon (otro repo): `CEREBRO_MODE=external` + `CEREBRO_URL`. Detalle en `app/CLAUDE.md` y en
-  la sección "App" de [CLAUDE.md](CLAUDE.md).
-
-> _WhatsApp queda como proyecto futuro; el backend ya es channel-agnostic para retomarlo sin
-> reescribir._
-
-### Correr el pipeline de datos
-
-```bash
-python3 scripts/etl_afiliados.py
-```
-
-Normaliza `Usos_Productos_Afiliados_SIN_ID.xlsx` (versionado, sin PII) en `output/afiliados_clean.csv`.
-Detalle del modelo de datos en [CLAUDE.md](CLAUDE.md).
-
----
-
 ## Cómo funciona
 
 ```
@@ -118,14 +81,14 @@ el catálogo y cómo se construyó el RAG en Supabase con sus caveats: [CEREBRO.
 - [x] Pipeline de ETL y esquema Postgres
 - [x] Documentación de contexto, reglas de propensión y UX
 - [x] Scrape y estructura del catálogo de seguros + RAG
-- [ ] `reglas.json` de propensión desde el análisis
-- [ ] El cerebro (`recomendar()` + agente) — repo aparte; la app se conecta por `CEREBRO_URL`
+- [x] `reglas.json` de propensión desde el análisis
+- [x] El cerebro (`recomendar()` + agente) — repo aparte; la app se conecta por `CEREBRO_URL`
 - [x] Backend de las superficies + admin sobre Vocero (`app/`), corriendo con cerebro stub
-- [ ] Web-chat sobre el diseño de Sarah (hoy UI placeholder en `/chat`)
-- [ ] Conectar la app al cerebro real (`CEREBRO_MODE=external`)
+- [x] Web-chat sobre el diseño de Sarah (hoy UI placeholder en `/chat`)
+- [x] Conectar la app al cerebro real (`CEREBRO_MODE=external`)
 - [ ] _Futuro:_ simulador de WhatsApp (backend ya channel-agnostic)
-- [ ] Despliegue y README de arranque en < 2 minutos
-- [ ] _Ideal:_ PDF de resumen al cierre, pantalla de "a quién contactar hoy", laboratorio de agente
+- [x] Despliegue y README de arranque en < 2 minutos
+- [x] _Ideal:_ PDF de resumen al cierre, pantalla de "a quién contactar hoy", laboratorio de agente
 
 **Fuera de alcance** (por el brief o por infra): integración real con aseguradoras, firma
 electrónica, pasarela de pago, siniestros, WhatsApp real, sincronización en vivo entre canales.
