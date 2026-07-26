@@ -25,9 +25,17 @@ const SERIE_MAX = 500_000;
  * para SQL fuera del schema (`db.execute(sql\`...\`)`).
  */
 async function buscarAfiliadoPorSerie(serie: number): Promise<Record<string, unknown> | null> {
-  const sql = getSql();
-  const rows = await sql`select * from afiliados where serie = ${serie} limit 1`;
-  return rows[0] ?? null;
+  try {
+    const sql = getSql();
+    const rows = await sql`select * from afiliados where serie = ${serie} limit 1`;
+    return rows[0] ?? null;
+  } catch {
+    // La tabla `afiliados` es referencia del lado del cerebro (Supabase de
+    // Jhon); esta base puede no tenerla (ej. el Postgres de producción del
+    // canal). No es fatal: se guarda `{serie}` y el cerebro hidrata la fila
+    // completa por su lado.
+    return null;
+  }
 }
 
 /** Asegura contacto + conversación para un `id` (sin insertar mensaje).
@@ -46,16 +54,16 @@ export async function ensureSession(clienteId: string, canal: Canal, serie?: num
 
   let contact = contactoInicial;
   if (serie && serie >= 1 && serie <= SERIE_MAX && !contact.perfilCrudo) {
-    const perfil = await buscarAfiliadoPorSerie(serie);
-    if (perfil) {
-      const db = getDb();
-      const actualizado = await db
-        .update(schema.contact)
-        .set({ perfilCrudo: perfil, updatedAt: new Date() })
-        .where(eq(schema.contact.id, contact.id))
-        .returning();
-      if (actualizado[0]) contact = actualizado[0];
-    }
+    // Con tabla local: fila completa. Sin ella: `{serie}` mínimo — suficiente
+    // para que el cerebro resuelva la identidad contra su propia base.
+    const perfil = (await buscarAfiliadoPorSerie(serie)) ?? { serie };
+    const db = getDb();
+    const actualizado = await db
+      .update(schema.contact)
+      .set({ perfilCrudo: perfil, updatedAt: new Date() })
+      .where(eq(schema.contact.id, contact.id))
+      .returning();
+    if (actualizado[0]) contact = actualizado[0];
   }
 
   return {
