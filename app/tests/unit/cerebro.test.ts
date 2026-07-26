@@ -82,4 +82,50 @@ describe("stub del cerebro (recorrido)", () => {
     expect(r.data.fase).toBe("Cierre ganado");
     expect(r.data.handoff).toBeTruthy();
   });
+
+  it("desde el 2º turno adjunta rieles: tags de perfil + ranking ordenado", async () => {
+    const r = await decidirTurno({
+      clienteId: "web_1",
+      canal: "web",
+      historial: hist("hola", "tengo un perro y mi esposa depende de mí"),
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.tags?.some((t) => t.id === "mascota")).toBe(true);
+    expect(r.data.tags?.some((t) => t.id === "dependientes")).toBe(true);
+    const ranking = r.data.ranking ?? [];
+    expect(ranking.length).toBeGreaterThanOrEqual(4);
+    // Ordenado desc por match; dependientes ⇒ "vida" primero.
+    expect(ranking[0]!.familia).toBe("vida");
+    for (let i = 1; i < ranking.length; i++) {
+      expect(ranking[i - 1]!.match).toBeGreaterThanOrEqual(ranking[i]!.match);
+    }
+  });
+
+  it("el primer turno (saludo) todavía no trae rieles", async () => {
+    const r = await decidirTurno({ clienteId: "web_1", canal: "web", historial: hist("hola") });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.tags).toBeUndefined();
+    expect(r.data.ranking).toBeUndefined();
+  });
+
+  it("el presupuesto ajusta la prima de la recomendación hacia abajo", async () => {
+    const historial = hist("hola", "mi mamá depende de mí", "arrendado", "droguería", "ok");
+    const sinPres = await decidirTurno({ clienteId: "web_1", canal: "web", historial });
+    const conPres = await decidirTurno({
+      clienteId: "web_1",
+      canal: "web",
+      historial,
+      presupuesto: 20_000,
+    });
+    expect(sinPres.ok && conPres.ok).toBe(true);
+    if (!sinPres.ok || !conPres.ok) return;
+    const prima = (r: typeof sinPres) =>
+      r.ok
+        ? (r.data.mensajes.find((m) => m.tipo === "recomendacion")!.payload!
+            .prima_mensual as number)
+        : 0;
+    expect(prima(conPres)).toBeLessThan(prima(sinPres));
+  });
 });
