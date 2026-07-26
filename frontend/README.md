@@ -1,29 +1,14 @@
-# Welcome to your Lovable project
+# `frontend/` — Referencias de diseño (Lovable)
 
-This project was built with [Lovable](https://lovable.dev).
+Estas carpetas son **referencia de diseño exacta** hecha en Lovable/Claude Design
+por Sarah. **No se compilan ni se despliegan**: el código real y funcional vive en
+[`../app/`](../app) (fork de Vocero CRM, Next.js). Cada superficie de `app/` se
+construyó portando estas vistas sobre el backend real.
 
-## Build with Lovable
+| Carpeta | Qué es | Portado a `app/` como |
+|---|---|---|
+| [`web-chat/`](./web-chat) | El chat web del afiliado (Asegura). | `app/src/components/surface-asegura.tsx` + `app/src/hooks/use-asegura-channel.ts` → ruta `/chat` |
+| [`manager-view/`](./manager-view) | El panel gerencial interno (CRM de clientes + registros de chats). | Sección `/dashboard`, `/contacts` (tabla + detalle) y el restyle de `/inbox` → `app/src/components/{dashboard,admin,contacts,inbox}/` |
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+Si Sarah ajusta una vista aquí, se replica el cambio a mano en `app/` — estas
+carpetas son la fuente de verdad **visual**, no el runtime.
