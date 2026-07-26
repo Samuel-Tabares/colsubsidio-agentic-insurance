@@ -1,0 +1,82 @@
+{
+  "_meta": {
+    "generado": "2026-07-25",
+    "fuente": "BD/BD_FINAL.csv",
+    "filas_origen": 500000,
+    "script": "ninguno todavia, construido a mano contra el perfilado de BD/PERFILADO-BD-FINAL.md",
+    "diccionario_codigos": "no entregado por la organizacion, y no reconstruible: el cruce por SERIE entre la base vieja y la nueva no identifica a la misma persona (GENERO coincide 55% entre las dos entregas, el azar puro es 50%, ver BD/PERFILADO-BD-FINAL.md)",
+    "autor": "Jhon (reglas de negocio, ver EQUIPO.md), primer borrador sin revisar por Luis todavia",
+    "reglas_descartadas_2026-07-25": "Se probaron dos reglas sobre SEGMENTO_GRUPO_FAMILIAR (LAMBDA, RHO+EPSILON), basadas en que la frecuencia de esos codigos en el CSV coincidia con los porcentajes que BD/BDFinal_colsubsidio.md atribuye a etiquetas legibles (ej. LAMBDA=57.29% ~ 'Afiliado Sin Grupo'=57.3%). Se midio el correlato de comportamiento real (tasa de DROGUERIA por codigo, que es la evidencia que pide ANALISIS-PROPENSION.md camino 2) y salio DEBIL: LAMBDA 16.8% contra 17.6% promedio de toda la base, RHO+EPSILON 20.4% contra 17.6%. Ninguno se acerca al ejemplo de evidencia fuerte del propio documento (61% contra 34%). Se descartaron ambas reglas: coincidir en porcentaje no prueba que sea la misma categoria, y el correlato medido no la respalda. La senal de quien tiene dependientes economicos se obtiene por conversacion (CAPA-CUALITATIVA.md), no por este campo.",
+    "pendiente": [
+      "capacidad_pago.topes por tramo: todos en 0, falta calibracion de negocio de Luis",
+      "desempate y default: primer borrador razonable, no una decision final",
+      "si alguien encuentra un correlato de comportamiento fuerte (tipo 61% vs 34%) para SEGMENTO_GRUPO_FAMILIAR, SEGMENTO_POBLACIONAL o PIRAMIDE_EMPRESA, ahi si vale la pena una regla nueva con codigo_opaco:true"
+    ]
+  },
+  "familias": ["familiares", "hogar", "vehiculos", "mascotas", "deudores-financieros"],
+  "reglas": [
+    {
+      "id": "R01",
+      "familia": "familiares",
+      "cuando": { "campo": "DROGUERIA", "en": ["SI"] },
+      "peso": 3,
+      "codigo_opaco": false,
+      "razon_dato": "ya estás pagando salud de tu bolsillo mes a mes",
+      "respaldo": {
+        "n_segmento": 88231,
+        "pct_base": 17.65,
+        "nota": "afiliados con compra en drogueria en la base de 500.000, BD_FINAL.csv"
+      },
+      "pregunta_confirmacion": "Si mañana te toca una urgencia médica, ¿cómo estás cubierto hoy?"
+    }
+  ],
+  "capacidad_pago": {
+    "campo": "RANGO_SALARIAL",
+    "topes": {
+      "Menor al SMLV": 0,
+      "Menor a 2 SMLV": 0,
+      "Entre 1 y 1.5 SMLV": 0,
+      "Entre 1.5 y 2 SMLV": 0,
+      "Entre 2 y 2.5 SMLV": 0,
+      "Entre 2 y 4 SMLV": 0,
+      "Entre 2.5 y 3 SMLV": 0,
+      "Entre 3 y 4 SMLV": 0,
+      "Entre 4 y 6 SMLV": 0,
+      "Entre 4 y 8 SMLV": 0,
+      "Entre 6 y 8 SMLV": 0,
+      "Entre 8 y 10 SMLV": 0,
+      "Entre 8 y 19 SMLV": 0,
+      "Entre 10 y 20 SMLV": 0,
+      "Entre 20 y 30 SMLV": 0,
+      "Mayor a 30 SMLV": 0,
+      "": 0
+    },
+    "piso_catalogo": 12000,
+    "techo_catalogo_publicado": 96600,
+    "nota": "prima mensual maxima sugerida por tramo salarial, TODOS EN 0 (pendiente de Luis, no inventado). piso_catalogo y techo_catalogo_publicado son el minimo y el maximo real de planes[].precio_mensual_desde entre los planes del catalogo (2026-07-25, 9 de 22 productos con al menos un plan con precio). Ningun tope deberia quedar por debajo de piso_catalogo. Las 17 llaves de topes son los 17 valores distintos reales de RANGO_SALARIAL en BD_FINAL.csv, incluida una llave vacia (4988 personas, 1.00%, campo sin dato) y 4 tramos con solape aparente y conteo casi nulo (Menor a 2 SMLV=123, Entre 2 y 4 SMLV=13, Entre 4 y 8 SMLV=3, Entre 8 y 19 SMLV=1) que huelen a error de captura, no normalizados aqui a proposito",
+    "smlv_usado": 1750905,
+    "smlv_fecha": "2026-07-25, decreto 1469 de 2025, $1.750.905, vigente tras revocarse su suspension provisional el 17 de julio de 2026 (Consejo de Estado). Verificar de nuevo antes de la demo si vuelve a moverse: hubo litigio activo sobre este decreto en 2026.",
+    "tramos_cop": {
+      "_nota": "Rango en pesos colombianos de cada tramo de RANGO_SALARIAL, precalculado con smlv_usado. El agente NUNCA hace esta multiplicacion en vivo (riesgo de error aritmetico en chat) ni muestra 'SMLV' a la persona: usa estos numeros ya convertidos. null = sin limite en ese extremo (el tramo mas bajo/alto de la base).",
+      "Menor al SMLV": { "min": null, "max": 1750905 },
+      "Menor a 2 SMLV": { "min": null, "max": 3501810 },
+      "Entre 1 y 1.5 SMLV": { "min": 1750905, "max": 2626358 },
+      "Entre 1.5 y 2 SMLV": { "min": 2626358, "max": 3501810 },
+      "Entre 2 y 2.5 SMLV": { "min": 3501810, "max": 4377263 },
+      "Entre 2 y 4 SMLV": { "min": 3501810, "max": 7003620 },
+      "Entre 2.5 y 3 SMLV": { "min": 4377263, "max": 5252715 },
+      "Entre 3 y 4 SMLV": { "min": 5252715, "max": 7003620 },
+      "Entre 4 y 6 SMLV": { "min": 7003620, "max": 10505430 },
+      "Entre 4 y 8 SMLV": { "min": 7003620, "max": 14007240 },
+      "Entre 6 y 8 SMLV": { "min": 10505430, "max": 14007240 },
+      "Entre 8 y 10 SMLV": { "min": 14007240, "max": 17509050 },
+      "Entre 8 y 19 SMLV": { "min": 14007240, "max": 33267195 },
+      "Entre 10 y 20 SMLV": { "min": 17509050, "max": 35018100 },
+      "Entre 20 y 30 SMLV": { "min": 35018100, "max": 52527150 },
+      "Mayor a 30 SMLV": { "min": 52527150, "max": null },
+      "": null
+    }
+  },
+  "desempate": "mayor peso acumulado; si empatan, gana familiares (unica con cobertura de salud/vida/accidentes, aplica al mayor numero de perfiles) - dormido por ahora, con una sola regla activa nunca hay empate posible. Queda listo para cuando existan mas reglas",
+  "default": "si ninguna regla dispara, la conversacion decide sola con las 5 preguntas de discovery de CAPA-CUALITATIVA.md - PRIMER BORRADOR. Con una sola regla activa (R01), esto aplica a la mayoria de los perfiles: solo el 17.65% de la base tiene DROGUERIA=SI"
+}
