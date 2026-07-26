@@ -32,6 +32,9 @@ export const CerebroResponse = z.object({
     .object({ resumen: z.string().optional(), familia: z.string().optional() })
     .catchall(z.unknown())
     .optional(),
+  /** Datos crudos del afiliado ya resuelto; Vocero los guarda en
+   * contact.perfilCrudo (panel "Datos del perfil" del admin). */
+  perfil: z.record(z.unknown()).optional(),
   tags: z
     .array(
       z.object({

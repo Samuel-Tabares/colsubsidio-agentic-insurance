@@ -9,8 +9,8 @@ import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import OpenAI from "openai";
 import type { AfiliadoRaw } from "./perfil.ts";
-import { recomendar, type Perfil } from "./recomendar.ts";
-import { matchCatalogo } from "./catalogo.ts";
+import { recomendar, type Perfil, type Recomendacion } from "./recomendar.ts";
+import { matchCatalogo, type ProductoCatalogo } from "./catalogo.ts";
 import { SYSTEM_PROMPT_BASE } from "./systemPrompt.ts";
 import { resolverSerie, type HistMsg } from "./identidad.ts";
 
@@ -83,6 +83,13 @@ export interface TurnoResultado {
    * el self-check (verificar que el agente sí usó recomendar_seguro y no
    * decidió la familia por su cuenta). */
   toolsUsed: string[];
+  /** Última salida de recomendar_seguro en este turno, si se llamó. La usa
+   * route.ts para llenar fase/analisis/perfil del contrato con Vocero — el
+   * agente no necesita saber que eso existe, solo decide cuándo llamar la tool. */
+  recomendacion?: Recomendacion;
+  /** Última salida de buscar_producto en este turno, si se llamó. Alimenta el
+   * ranking del contrato con Vocero. */
+  productos?: ProductoCatalogo[];
 }
 
 function openaiClient(): OpenAI {
@@ -109,6 +116,8 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
   ];
 
   const toolsUsed: string[] = [];
+  let recomendacion: Recomendacion | undefined;
+  let productos: ProductoCatalogo[] | undefined;
 
   for (let ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
     const resp = await client.chat.completions.create({
@@ -124,6 +133,8 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
       return {
         texto: msg.content?.trim() || "Dame un segundo, estoy verificando esto con calma.",
         toolsUsed,
+        recomendacion,
+        productos,
       };
     }
 
@@ -132,6 +143,22 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
     for (const call of msg.tool_calls) {
       toolsUsed.push(call.function.name);
       const resultado = await ejecutarTool(call, input.perfil);
+      if (
+        call.function.name === "recomendar_seguro" &&
+        typeof resultado === "object" &&
+        resultado !== null &&
+        "familia" in resultado
+      ) {
+        recomendacion = resultado as Recomendacion;
+      }
+      if (
+        call.function.name === "buscar_producto" &&
+        typeof resultado === "object" &&
+        resultado !== null &&
+        "productos" in resultado
+      ) {
+        productos = (resultado as { productos: ProductoCatalogo[] }).productos;
+      }
       messages.push({
         role: "tool",
         tool_call_id: call.id,
@@ -142,7 +169,12 @@ export async function decidirTurno(input: TurnoInput): Promise<TurnoResultado> {
 
   // Se agotaron las rondas de tools sin una respuesta final: no se inventa nada,
   // se degrada a escalamiento (igual que un fallo de proveedor).
-  return { texto: "Dame un segundo, te conecto con un asesor para seguir con esto.", toolsUsed };
+  return {
+    texto: "Dame un segundo, te conecto con un asesor para seguir con esto.",
+    toolsUsed,
+    recomendacion,
+    productos,
+  };
 }
 
 async function ejecutarTool(
