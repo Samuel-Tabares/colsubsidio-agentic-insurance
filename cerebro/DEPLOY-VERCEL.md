@@ -42,7 +42,7 @@ Vercel asigna una URL de producción (`https://<algo>.vercel.app`). Probarla
 con:
 
 ```bash
-curl -X POST "https://<la-url-real>.vercel.app/api/decidir" \
+curl -X POST "https://<la-url-real>.vercel.app/decidir" \
   -H "Content-Type: application/json" \
   -d '{
     "clienteId": "smoke-test",

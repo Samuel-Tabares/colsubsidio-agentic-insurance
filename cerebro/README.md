@@ -1,8 +1,10 @@
 # cerebro
 
 Servicio HTTP que implementa el lado "cerebro" del contrato ya cableado en
-`app/src/lib/cerebro/` (Vocero): un solo endpoint, `POST /api/decidir`, que
-recibe `CerebroRequest` y devuelve `CerebroResponse`.
+`app/src/lib/cerebro/` (Vocero): un solo endpoint, `POST /decidir` (sin
+prefijo `/api` — Vocero llama literal `{CEREBRO_URL}/decidir`, ver
+`app/src/lib/cerebro/index.ts`), que recibe `CerebroRequest` y devuelve
+`CerebroResponse`.
 
 Deploy manual a Vercel, ver **[DEPLOY-VERCEL.md](./DEPLOY-VERCEL.md)**.
 
@@ -43,7 +45,7 @@ cp .env.local.example .env.local   # completar con las 3 keys reales
 npm run check:recomendar           # motor de reglas, sin red
 npm run check:identidad            # requiere Supabase
 npm run check:agente               # requiere Supabase + OpenAI (llama al LLM real)
-npm run dev                        # next dev, prueba POST /api/decidir en localhost
+npm run dev                        # next dev, prueba POST /decidir en localhost
 ```
 
 ## Variables de entorno
