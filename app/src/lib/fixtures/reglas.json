@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "nota": "Reglas SEMILLA e ILUSTRATIVAS para el stub del cerebro. El reglas.json real lo produce Luis desde el análisis de los 500K afiliados (ver ANALISIS-PROPENSION.md §6). razon_dato y respaldo son las dos piezas que responden el gate del jurado.",
+    "diccionario_codigos": "no entregado por la organizacion"
+  },
+  "familias": ["vida", "salud", "accidentes", "hogar", "viajes"],
+  "reglas": [
+    {
+      "id": "R01",
+      "familia": "salud",
+      "cuando": { "campo": "DROGUERIA", "en": ["SI"] },
+      "peso": 3,
+      "razon_dato": "ya estás pagando salud de tu bolsillo mes a mes",
+      "respaldo": { "n_segmento": 88250, "pct_base": 17.65, "nota": "afiliados con compra en droguería (ilustrativo)" }
+    },
+    {
+      "id": "R02",
+      "familia": "vida",
+      "cuando": { "campo": "dependientes", "en": ["si"] },
+      "peso": 3,
+      "razon_dato": "hay alguien que depende económicamente de ti",
+      "respaldo": { "nota": "se confirma en la conversación (discovery pregunta 1)" }
+    },
+    {
+      "id": "R03",
+      "familia": "accidentes",
+      "cuando": { "campo": "independiente_sin_respaldo", "en": ["si"] },
+      "peso": 2,
+      "razon_dato": "si no pudieras trabajar, no tendrías un respaldo de empleador",
+      "respaldo": { "nota": "se confirma en la conversación (discovery pregunta 3)" }
+    },
+    {
+      "id": "R04",
+      "familia": "hogar",
+      "cuando": { "campo": "VIVIENDA", "en": ["SI"] },
+      "peso": 2,
+      "razon_dato": "usas servicios de vivienda, proteger el hogar te aplica",
+      "respaldo": { "nota": "marca de consumo VIVIENDA (ilustrativo)" }
+    }
+  ],
+  "capacidad_pago": {
+    "campo": "RANGO_SALARIAL",
+    "nota": "el rango salarial define qué prima tiene sentido ofrecer, no la familia"
+  },
+  "desempate": "mayor peso acumulado; si empatan, gana la familia con el segmento más grande",
+  "default": "si ninguna regla dispara, la conversación decide con las 5 preguntas del discovery"
+}

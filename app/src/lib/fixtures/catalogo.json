@@ -1,0 +1,88 @@
+{
+  "_meta": {
+    "nota": "Catálogo SEMILLA e ILUSTRATIVO para el stub del cerebro. El catálogo real (scrape de colsubsidio.com/seguros) y sus primas los produce Jhon en su repo. Las primas aquí son rangos ilustrativos por edad, no ofertas reales.",
+    "fuente": "ilustrativo"
+  },
+  "productos": [
+    {
+      "id": "vida-01",
+      "familia": "vida",
+      "aseguradora": "Seguros Bolívar",
+      "nombre": "Vida Tranquilidad",
+      "prima_mensual": 28000,
+      "cubre": [
+        "Si faltas, tu familia recibe un pago único que cubre gastos y deudas",
+        "Auxilio funerario para no dejarle ese peso a nadie",
+        "Renta mensual temporal para quien dependía de ti"
+      ],
+      "no_cubre": [
+        "Muerte por deportes de alto riesgo no declarados",
+        "Preexistencias no informadas al contratar"
+      ]
+    },
+    {
+      "id": "salud-01",
+      "familia": "salud",
+      "aseguradora": "SURA",
+      "nombre": "Salud a la Mano",
+      "prima_mensual": 42000,
+      "cubre": [
+        "Consultas y especialistas sin filas largas",
+        "Medicamentos con descuento en droguería",
+        "Urgencias cubiertas desde el primer día"
+      ],
+      "no_cubre": [
+        "Tratamientos estéticos",
+        "Enfermedades preexistentes durante los primeros 3 meses"
+      ]
+    },
+    {
+      "id": "salud-02",
+      "familia": "salud",
+      "aseguradora": "Colmédica",
+      "nombre": "Plan Complementario Esencial",
+      "prima_mensual": 55000,
+      "cubre": [
+        "Red de clínicas ampliada",
+        "Hospitalización con habitación individual",
+        "Telemedicina 24/7"
+      ],
+      "no_cubre": [
+        "Cirugías estéticas",
+        "Atención fuera de la red sin autorización"
+      ]
+    },
+    {
+      "id": "accidentes-01",
+      "familia": "accidentes",
+      "aseguradora": "Mapfre",
+      "nombre": "Accidentes Personales Activa",
+      "prima_mensual": 18000,
+      "cubre": [
+        "Si te incapacitas por un accidente, sigue entrando plata",
+        "Gastos médicos por accidente",
+        "Indemnización por incapacidad temporal o permanente"
+      ],
+      "no_cubre": [
+        "Accidentes bajo efectos de alcohol o sustancias",
+        "Lesiones por actividades laborales de alto riesgo no declaradas"
+      ]
+    },
+    {
+      "id": "hogar-01",
+      "familia": "hogar",
+      "aseguradora": "Seguros del Estado",
+      "nombre": "Hogar Protegido",
+      "prima_mensual": 32000,
+      "cubre": [
+        "Daños por incendio, inundación o terremoto",
+        "Robo de contenido del hogar",
+        "Asistencia de plomería y electricidad 24/7"
+      ],
+      "no_cubre": [
+        "Daños por mantenimiento descuidado",
+        "Objetos de valor no declarados"
+      ]
+    }
+  ]
+}
